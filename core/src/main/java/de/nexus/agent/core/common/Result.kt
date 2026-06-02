@@ -3,7 +3,7 @@ package de.nexus.agent.core.common
 sealed class Result<out T> {
     data class Success<T>(val data: T) : Result<T>()
     data class ResultError(val exception: Throwable, val message: String? = null) : Result<Nothing>()
-    data object Loading : Result<Nothing>()
+    object Loading : Result<Nothing>()
 
     val isSuccess get() = this is Success
     val isError get() = this is ResultError
