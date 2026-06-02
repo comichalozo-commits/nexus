@@ -1,11 +1,14 @@
-﻿package de.nexus.agent.core.domain.tools
+package de.nexus.agent.core.domain.tools
 
+import android.content.Context
+import android.content.SharedPreferences
 import de.nexus.agent.core.data.model.ToolParameterSchema
 import de.nexus.agent.core.data.model.ToolProperty
-import de.nexus.agent.core.domain.memory.MemorySystem
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
-class MemoryTool  constructor(
-    private val memorySystem: MemorySystem
+class MemoryTool(
+    private val context: Context
 ) : BaseTool() {
     override val name: String = "memory"
     override val description: String = "Speichere und rufe Erinnerungen (Fakten) ab, die der Agent ueber den Nutzer oder Gespraeche gespeichert hat."
@@ -15,7 +18,7 @@ class MemoryTool  constructor(
             "action" to ToolProperty(
                 type = "string",
                 description = "Aktion ausfuehren",
-                enum = listOf("remember", "recall", "search", "forget", "list")
+                enum = listOf("remember", "recall", "list")
             ),
             "content" to ToolProperty(
                 type = "string",
@@ -23,15 +26,20 @@ class MemoryTool  constructor(
             ),
             "query" to ToolProperty(
                 type = "string",
-                description = "Suchbegriff (bei action=search/recall)"
-            ),
-            "id" to ToolProperty(
-                type = "string",
-                description = "ID der Erinnerung zum Loeschen"
+                description = "Suchbegriff (bei action=recall)"
             )
         ),
         required = listOf("action")
     )
+
+    private fun getPrefs(): SharedPreferences {
+        return context.getSharedPreferences("nexus_memory", Context.MODE_PRIVATE)
+    }
+
+    private fun getAllFacts(): List<Pair<String, String>> {
+        val prefs = getPrefs()
+        return prefs.all.entries.map { it.key to (it.value as? String ?: "") }.filter { it.second.isNotBlank() }
+    }
 
     override suspend fun execute(arguments: String): String {
         val action = getStringParam(arguments, "action")
@@ -39,51 +47,28 @@ class MemoryTool  constructor(
         return when (action) {
             "remember" -> {
                 val content = getStringParam(arguments, "content")
-                if (content.isBlank()) {
-                    return "Fehler: Inhalt darf nicht leer sein."
-                }
-                val id = memorySystem.remember(content)
+                if (content.isBlank()) return "Fehler: Inhalt darf nicht leer sein."
+                val id = "fact_${System.currentTimeMillis()}"
+                getPrefs().edit().putString(id, content).apply()
                 "Erinnerung gespeichert (ID: $id)"
             }
             "recall" -> {
                 val query = getStringParam(arguments, "query")
-                if (query.isBlank()) {
-                    return "Fehler: Suchbegriff darf nicht leer sein."
-                }
-                val results = memorySystem.recall(query)
+                if (query.isBlank()) return "Fehler: Suchbegriff darf nicht leer sein."
+                val results = getAllFacts().filter { it.second.contains(query, ignoreCase = true) }
                 if (results.isEmpty()) {
                     "Keine Erinnerungen fuer \"$query\" gefunden."
                 } else {
-                    "Erinnerungen:\n${results.joinToString("\n") { "â€¢ ${it.content}" }}"
+                    "Erinnerungen:\n${results.joinToString("\n") { "\u2022 ${it.second}" }}"
                 }
-            }
-            "search" -> {
-                val query = getStringParam(arguments, "query")
-                if (query.isBlank()) {
-                    return "Fehler: Suchbegriff darf nicht leer sein."
-                }
-                val results = memorySystem.search(query)
-                if (results.isEmpty()) {
-                    "Keine Treffer fuer \"$query\"."
-                } else {
-                    "Suchergebnisse:\n${results.joinToString("\n") { "â€¢ ${it.content}" }}"
-                }
-            }
-            "forget" -> {
-                val factId = getStringParam(arguments, "id")
-                if (factId.isBlank()) {
-                    return "Fehler: ID ist erforderlich."
-                }
-                val deleted = memorySystem.forget(factId)
-                if (deleted) "Erinnerung geloescht." else "Erinnerung nicht gefunden."
             }
             "list" -> {
-                val facts = memorySystem.getAllFacts()
+                val facts = getAllFacts()
                 if (facts.isEmpty()) {
                     "Keine Erinnerungen gespeichert."
                 } else {
                     "Gespeicherte Erinnerungen (${facts.size}):\n" +
-                        facts.joinToString("\n") { "${it.id}: ${it.content}" }
+                        facts.joinToString("\n") { "${it.first}: ${it.second}" }
                 }
             }
             else -> "Fehler: Unbekannte Aktion: $action"

@@ -2,6 +2,7 @@ package de.nexus.agent.core.data.model
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 
 /**
@@ -90,7 +91,7 @@ data class TokenUsage(
 data class ToolDefinition(
     val name: String,
     val description: String,
-    val parameters: Map<String, Any> = emptyMap()
+    val parameters: Map<String, @Contextual Any> = emptyMap()
 )
 
 /**

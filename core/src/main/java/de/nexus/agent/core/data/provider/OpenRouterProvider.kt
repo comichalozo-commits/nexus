@@ -1,4 +1,4 @@
-package de.nexus.agent.core.data.provider
+﻿package de.nexus.agent.core.data.provider
 
 import com.google.gson.Gson
 import com.google.gson.JsonArray
@@ -7,30 +7,29 @@ import com.google.gson.JsonParser
 import de.nexus.agent.core.data.model.ChatMessage
 import de.nexus.agent.core.data.model.ChatStreamEvent
 import de.nexus.agent.core.data.model.LlmConfig
+import de.nexus.agent.core.data.model.MessageRole
 import de.nexus.agent.core.data.model.StreamingChatResponse
 import de.nexus.agent.core.data.model.ToolCall
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
-import okhttp3.Call
-import okhttp3.Callback
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
-import okhttp3.Response
-import okhttp3.ResponseBody
-import okio.BufferedSource
 import java.io.IOException
 import java.util.concurrent.TimeUnit
+
 class OpenRouterProvider(
     private val okHttpClient: OkHttpClient,
     private val json: kotlinx.serialization.json.Json
 ) : LlmProviderInterface {
 
+    private val gson = Gson()
+
     override val providerType: String = "openrouter"
+
     private fun buildUrl(config: LlmConfig): String {
         return (config.baseUrl ?: "https://openrouter.ai/api/v1") + "/chat/completions"
     }
@@ -59,8 +58,8 @@ class OpenRouterProvider(
         val messagesArray = JsonArray()
         messages.forEach { msg ->
             val msgObj = JsonObject()
-            msgObj.addProperty("role", msg.role)
-            if (msg.toolCalls != null && msg.toolCalls.isNotEmpty()) {
+            msgObj.addProperty("role", msg.role.name.lowercase())
+            if (msg.toolCalls.isNotEmpty()) {
                 val tcArray = JsonArray()
                 msg.toolCalls.forEach { tc ->
                     val tcObj = JsonObject()
@@ -73,26 +72,19 @@ class OpenRouterProvider(
                     tcArray.add(tcObj)
                 }
                 msgObj.add("tool_calls", tcArray)
-                msgObj.addProperty("content", msg.content ?: "")
-            } else if (msg.content != null) {
-                if (msg.content.startsWith("[{") && msg.content.contains("image_url")) {
-                    try {
-                        val parts = JsonParser.parseString(msg.content).asJsonArray
-                        msgObj.add("content", parts)
-                    } catch (_: Exception) {
-                        msgObj.addProperty("content", msg.content)
-                    }
-                } else {
-                    msgObj.addProperty("content", msg.content)
-                }
+                msgObj.addProperty("content", msg.content)
             } else {
-                msgObj.addProperty("content", "")
+                msgObj.addProperty("content", msg.content)
             }
             if (msg.toolCallId != null) {
                 msgObj.addProperty("tool_call_id", msg.toolCallId)
             }
-            if (msg.name != null) {
-                msgObj.addProperty("name", msg.name)
+            // Only add name for tool role messages (OpenRouter API requirement)
+            if (msg.role == MessageRole.TOOL && msg.toolCallId != null) {
+                val toolName = msg.toolCalls.firstOrNull()?.name
+                if (toolName != null) {
+                    msgObj.addProperty("name", toolName)
+                }
             }
             messagesArray.add(msgObj)
         }
@@ -108,17 +100,10 @@ class OpenRouterProvider(
                 toolsArray.add(toolObj)
             }
             body.add("tools", toolsArray)
-
-            val toolChoice = JsonObject()
-            toolChoice.addProperty("type", "auto")
-            body.add("tool_choice", autoToolChoice(tools))
+            body.add("tool_choice", JsonObject().apply { addProperty("type", "auto") })
         }
 
         return gson.toJson(body)
-    }
-
-    private fun autoToolChoice(tools: List<Map<String, Any>>): JsonObject {
-        return JsonObject().apply { addProperty("type", "auto") }
     }
 
     override suspend fun chat(
@@ -135,19 +120,13 @@ class OpenRouterProvider(
         val request = requestBuilder.post(requestBody.toRequestBody("application/json".toMediaType())).build()
 
         try {
-            val call = okHttpClient.newBuilder()
-                .readTimeout(120, TimeUnit.SECONDS)
-                .build()
-                .newCall(call)
+            val dedicatedClient = okHttpClient.newBuilder().readTimeout(120, TimeUnit.SECONDS).build()
+            val call = dedicatedClient.newCall(request)
 
-            val sseEvents = parseSseStream(call)
-
-            withContext(Dispatchers.IO) {
-                sseEvents.collect { event ->
-                    response.emit(event)
-                    if (event is ChatStreamEvent.Done || event is ChatStreamEvent.Error) {
-                        return@collect
-                    }
+            parseSseStream(call).collect { event ->
+                response.emit(event)
+                if (event is ChatStreamEvent.Done || event is ChatStreamEvent.Error) {
+                    return@collect
                 }
             }
         } catch (e: Exception) {
@@ -157,143 +136,110 @@ class OpenRouterProvider(
         return response
     }
 
-    private fun parseSseStream(call: Call): Flow<ChatStreamEvent> = callbackFlow {
+    private fun parseSseStream(call: okhttp3.Call): Flow<ChatStreamEvent> = flow {
         val collectedDeltas = StringBuilder()
         val toolCallAccumulators = mutableMapOf<String, Pair<String, StringBuilder>>()
 
-        call.enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                trySend(ChatStreamEvent.Error("SSE stream failed: ${e.message}", e))
-                close()
-            }
+        val httpResponse = withContext(Dispatchers.IO) { call.execute() }
 
-            override fun onResponse(call: Call, response: Response) {
-                if (!response.isSuccessful) {
-                    val bodyStr = response.body?.string() ?: "Unknown error"
-                    trySend(ChatStreamEvent.Error("HTTP ${response.code}: $bodyStr"))
-                    close()
-                    return
-                }
+        if (!httpResponse.isSuccessful) {
+            val bodyStr = httpResponse.body?.string() ?: "Unknown error"
+            emit(ChatStreamEvent.Error("HTTP ${httpResponse.code}: $bodyStr"))
+            emit(ChatStreamEvent.Done())
+            return@flow
+        }
 
-                val body = response.body ?: run {
-                    trySend(ChatStreamEvent.Error("Empty response body"))
-                    close()
-                    return
-                }
+        val body = httpResponse.body ?: run {
+            emit(ChatStreamEvent.Error("Empty response body"))
+            emit(ChatStreamEvent.Done())
+            return@flow
+        }
 
-                try {
-                    body.source().use { source ->
-                        processSseSource(source, collectedDeltas, toolCallAccumulators, this@callbackFlow, call)
-                    }
-                } catch (e: Exception) {
-                    trySend(ChatStreamEvent.Error("Stream processing error: ${e.message}", e))
-                }
-                close()
-            }
-        })
-
-        awaitClose { call.cancel() }
-    }
-
-    private fun processSseSource(
-        source: BufferedSource,
-        collectedDeltas: StringBuilder,
-        toolCallAccumulators: MutableMap<String, Pair<String, StringBuilder>>,
-        flow: kotlinx.coroutines.channels.SendChannel<ChatStreamEvent>,
-        call: Call
-    ) {
-        while (!source.exhausted()) {
-            val line = source.readUtf8Line() ?: break
-            if (!line.startsWith("data: ")) continue
-            val data = line.removePrefix("data: ").trim()
-            if (data == "[DONE]") {
-                val fullToolCalls = toolCallAccumulators.map { (id, pair) ->
-                    ToolCall(id, pair.first, pair.second.toString())
-                }
-                flow.trySend(ChatStreamEvent.Done(collectedDeltas.toString(), fullToolCalls))
-                break
-            }
-
-            try {
-                val json = JsonParser.parseString(data).asJsonObject
-                val choices = json.getAsJsonArray("choices") ?: continue
-                for (choiceElement in choices) {
-                    val choice = choiceElement.asJsonObject
-                    val delta = choice.getAsJsonObject("delta") ?: continue
-
-                    // Text content
-                    if (delta.has("content") && !delta.get("content").isJsonNull) {
-                        val text = delta.get("content").asString
-                        if (text.isNotEmpty()) {
-                            collectedDeltas.append(text)
-                            flow.trySend(ChatStreamEvent.TextDelta(text))
-                        }
-                    }
-
-                    // Tool calls
-                    if (delta.has("tool_calls")) {
-                        val toolCalls = delta.getAsJsonArray("tool_calls")
-                        for (tcElement in toolCalls) {
-                            val tcObj = tcElement.asJsonObject
-                            val index = tcObj.get("index")?.asInt ?: 0
-                            val tcId = tcObj.get("id")?.asString ?: "tc_$index"
-
-                            if (tcObj.has("function")) {
-                                val fnObj = tcObj.getAsJsonObject("function")
-                                val name = fnObj.get("name")?.asString ?: ""
-                                val args = fnObj.get("arguments")?.asString ?: ""
-
-                                if (!toolCallAccumulators.containsKey(tcId)) {
-                                    toolCallAccumulators[tcId] = name to StringBuilder()
-                                    flow.trySend(ChatStreamEvent.ToolCallStart(tcId, name))
-                                }
-                                toolCallAccumulators[tcId]?.second?.append(args)
-                                flow.trySend(ChatStreamEvent.ToolCallDelta(tcId, args))
-                            }
-                        }
-                    }
-
-                    // Finish reason
-                    val finishReason = choice.get("finish_reason")?.asString
-                    if (finishReason == "stop" || finishReason == "tool_calls") {
+        try {
+            body.source().use { source ->
+                var streamDone = false
+                while (!source.exhausted() && !streamDone) {
+                    val line = source.readUtf8Line() ?: ""
+                    if (!line.startsWith("data: ")) continue
+                    val data = line.removePrefix("data: ").trim()
+                    if (data == "[DONE]") {
                         val fullToolCalls = toolCallAccumulators.map { (id, pair) ->
                             ToolCall(id, pair.first, pair.second.toString())
                         }
-                        flow.trySend(ChatStreamEvent.Done(collectedDeltas.toString(), fullToolCalls))
-                        call.cancel()
-                        return
+                        emit(ChatStreamEvent.Done(collectedDeltas.toString(), fullToolCalls))
+                        streamDone = true
+                        continue
                     }
 
-                    // Usage
-                    if (json.has("usage") && !json.get("usage").isJsonNull) {
-                        val usage = json.getAsJsonObject("usage")
-                        val promptTokens = usage.get("prompt_tokens")?.asInt ?: 0
-                        val completionTokens = usage.get("completion_tokens")?.asInt ?: 0
-                        val totalTokens = usage.get("total_tokens")?.asInt ?: 0
-                        flow.trySend(ChatStreamEvent.UsageInfo(promptTokens, completionTokens, totalTokens))
-                    }
+                    try {
+                        val jsonElement = JsonParser.parseString(data).asJsonObject
+                        val choices = jsonElement.getAsJsonArray("choices") ?: continue
+                        for (choiceElement in choices) {
+                            val choice = choiceElement.asJsonObject
+                            val delta = choice.getAsJsonObject("delta") ?: continue
+
+                            if (delta.has("content") && !delta.get("content").isJsonNull) {
+                                val text = delta.get("content").asString
+                                if (text.isNotEmpty()) {
+                                    collectedDeltas.append(text)
+                                    emit(ChatStreamEvent.TextDelta(text))
+                                }
+                            }
+
+                            if (delta.has("tool_calls")) {
+                                val toolCallsArr = delta.getAsJsonArray("tool_calls")
+                                for (tcElement in toolCallsArr) {
+                                    val tcObj = tcElement.asJsonObject
+                                    val index = tcObj.get("index")?.asInt ?: 0
+                                    val tcId = tcObj.get("id")?.asString ?: "tc_$index"
+
+                                    if (tcObj.has("function")) {
+                                        val fnObj = tcObj.getAsJsonObject("function")
+                                        val name = fnObj.get("name")?.asString ?: ""
+                                        val args = fnObj.get("arguments")?.asString ?: ""
+
+                                        if (!toolCallAccumulators.containsKey(tcId)) {
+                                            toolCallAccumulators[tcId] = name to StringBuilder()
+                                            emit(ChatStreamEvent.ToolCallStart(tcId, name))
+                                        }
+                                        toolCallAccumulators[tcId]?.second?.append(args)
+                                        emit(ChatStreamEvent.ToolCallDelta(tcId, args))
+                                    }
+                                }
+                            }
+
+                            val finishReason = choice.get("finish_reason")?.asString
+                            if (finishReason == "stop" || finishReason == "tool_calls") {
+                                val fullToolCalls = toolCallAccumulators.map { (id, pair) ->
+                                    ToolCall(id, pair.first, pair.second.toString())
+                                }
+                                emit(ChatStreamEvent.Done(collectedDeltas.toString(), fullToolCalls))
+                                streamDone = true
+                                break
+                            }
+                        }
+                    } catch (_: Exception) {}
                 }
-            } catch (_: Exception) {
-                // Skip malformed SSE data
             }
+        } catch (e: Exception) {
+            emit(ChatStreamEvent.Error("Stream processing error: ${e.message}", e))
         }
+        emit(ChatStreamEvent.Done())
     }
 
     override suspend fun complete(prompt: String, config: LlmConfig): String {
-        val messages = listOf(ChatMessage(role = "user", content = prompt))
+        val messages = listOf(ChatMessage(role = MessageRole.USER, content = prompt))
         val response = chat(messages, null, config)
-        return withContext(Dispatchers.IO) {
-            var result = ""
-            response.events.collect { event ->
-                when (event) {
-                    is ChatStreamEvent.TextDelta -> result += event.delta
-                    is ChatStreamEvent.Done -> result = event.fullContent
-                    is ChatStreamEvent.Error -> throw RuntimeException(event.message, event.cause)
-                    else -> {}
-                }
+        var result = ""
+        response.events.collect { event ->
+            when (event) {
+                is ChatStreamEvent.TextDelta -> result += event.delta
+                is ChatStreamEvent.Done -> { /* done */ }
+                is ChatStreamEvent.Error -> throw RuntimeException(event.message, event.cause)
+                else -> {}
             }
-            result
         }
+        return result
     }
 
     override suspend fun embed(text: String, config: LlmConfig?): FloatArray {
@@ -305,19 +251,16 @@ class OpenRouterProvider(
             addProperty("input", text)
         }
 
-        val requestBuilder = Request.Builder().url(url)
-        buildHeaders(config).forEach { (k, v) -> requestBuilder.addHeader(k, v) }
-        val request = requestBuilder
-            .post(gson.toJson(body).toRequestBody("application/json".toMediaType()))
-            .build()
+        val request = Request.Builder().url(url).apply {
+            buildHeaders(config).forEach { (k, v) -> addHeader(k, v) }
+        }.post(gson.toJson(body).toRequestBody("application/json".toMediaType())).build()
 
         return withContext(Dispatchers.IO) {
-            okHttpClient.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) {
-                    throw IOException("Embedding request failed: ${response.code}")
-                }
-                val json = JsonParser.parseString(response.body?.string() ?: "").asJsonObject
-                val data = json.getAsJsonArray("data")
+            okHttpClient.newCall(request).execute().use { resp ->
+                if (!resp.isSuccessful) throw IOException("Embedding failed: ${resp.code}")
+                val jsonStr = resp.body?.string() ?: throw IOException("Empty embedding response")
+                val jsonObj = JsonParser.parseString(jsonStr).asJsonObject
+                val data = jsonObj.getAsJsonArray("data")
                 if (data != null && data.size() > 0) {
                     val embeddingArray = data[0].asJsonObject.getAsJsonArray("embedding")
                     FloatArray(embeddingArray.size()) { i -> embeddingArray[i].asFloat }
@@ -335,7 +278,7 @@ class OpenRouterProvider(
     override suspend fun healthCheck(): Boolean {
         return try {
             val config = LlmConfig(
-                provider = providerType,
+                provider = de.nexus.agent.core.data.model.ProviderType.OPENROUTER,
                 model = "openai/gpt-4o-mini",
                 apiKey = "",
                 maxTokens = 1

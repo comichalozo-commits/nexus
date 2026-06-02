@@ -1,18 +1,16 @@
 package de.nexus.agent.core.di
 
 import android.content.Context
-import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import de.nexus.agent.core.data.provider.AnthropicProvider
 import de.nexus.agent.core.data.provider.GeminiProvider
 import de.nexus.agent.core.data.provider.OpenAiProvider
 import de.nexus.agent.core.data.provider.OpenRouterProvider
+import de.nexus.agent.core.data.model.LlmProvider
 import de.nexus.agent.core.data.model.ProviderType
 import de.nexus.agent.core.data.provider.LlmProviderInterface
 import de.nexus.agent.core.data.provider.LlmRouter
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.json.Json
-import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
 
@@ -37,11 +35,30 @@ object NetworkModule {
 
     fun provideOpenRouterProvider(): OpenRouterProvider = OpenRouterProvider(okHttpClient, json)
 
-    fun provideAnthropicProvider(): AnthropicProvider = AnthropicProvider(okHttpClient, json)
+    private fun createLlmProvider(id: String, name: String, baseUrl: String, apiKey: String): LlmProvider {
+        return LlmProvider(
+            id = id,
+            name = name,
+            baseUrl = baseUrl,
+            apiKey = apiKey,
+            isEnabled = apiKey.isNotBlank()
+        )
+    }
 
-    fun provideOpenAiProvider(): OpenAiProvider = OpenAiProvider(okHttpClient, json)
+    fun provideAnthropicProvider(apiKey: String = ""): AnthropicProvider {
+        val config = createLlmProvider("anthropic", "Anthropic", "https://api.anthropic.com", apiKey)
+        return AnthropicProvider(config)
+    }
 
-    fun provideGeminiProvider(): GeminiProvider = GeminiProvider(okHttpClient, json)
+    fun provideOpenAiProvider(apiKey: String = ""): OpenAiProvider {
+        val config = createLlmProvider("openai", "OpenAI", "https://api.openai.com", apiKey)
+        return OpenAiProvider(config)
+    }
+
+    fun provideGeminiProvider(apiKey: String = ""): GeminiProvider {
+        val config = createLlmProvider("gemini", "Google Gemini", "https://generativelanguage.googleapis.com", apiKey)
+        return GeminiProvider(config)
+    }
 
     fun provideLlmRouter(context: Context): LlmRouter {
         val providers = mutableMapOf<ProviderType, LlmProviderInterface>()

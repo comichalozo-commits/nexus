@@ -1,4 +1,4 @@
-package de.nexus.agent.core
+﻿package de.nexus.agent.core
 
 import android.content.Context
 import de.nexus.agent.core.data.db.NexusDatabase
@@ -34,7 +34,7 @@ object ServiceLocator {
         val fileTool = FileTool(appContext)
         val shellTool = ShellTool()
         val memoryTool = MemoryTool(appContext)
-        val scheduleTool = ScheduleTool(appContext)
+        val scheduleTool = ScheduleTool()
 
         toolRegistry = ToolRegistry().apply {
             register(webSearchTool)
