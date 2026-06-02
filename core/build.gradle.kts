@@ -59,6 +59,11 @@ dependencies {
     implementation(libs.accompanist.permissions)
     implementation(libs.jsoup)
 
+    implementation(libs.play.services.location)
+    implementation(libs.play.services.maps)
+    implementation(libs.maps.compose)
+    implementation(libs.androidx.browser)
+
     testImplementation(libs.junit.jupiter.api)
     testImplementation(libs.mockk)
     testImplementation(libs.turbine)

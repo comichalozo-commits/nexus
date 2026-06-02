@@ -1,4 +1,4 @@
-package de.nexus.agent.core.domain.tools
+﻿package de.nexus.agent.core.domain.tools
 
 import de.nexus.agent.core.data.model.ToolParameterSchema
 import de.nexus.agent.core.data.model.ToolProperty
@@ -166,7 +166,7 @@ class WebFetchTool(
                         }
                         "em", "i" -> {
                             val text = node.text().trim()
-                            if (text.isNotEmpty()) sb.append("_$text_ ")
+                            if (text.isNotEmpty()) sb.append("_${text}_ ")
                         }
                         else -> extractNodeMarkdown(node, sb)
                     }

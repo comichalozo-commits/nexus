@@ -3,6 +3,7 @@ package de.nexus.agent.core.domain.agent
 import de.nexus.agent.core.data.model.ChatMessage
 import de.nexus.agent.core.data.model.ChatStreamEvent
 import de.nexus.agent.core.data.model.LlmConfig
+import de.nexus.agent.core.data.model.MessageRole
 import de.nexus.agent.core.data.model.ProviderType
 import de.nexus.agent.core.data.model.ToolCall
 import de.nexus.agent.core.data.provider.LlmProviderInterface
@@ -47,7 +48,7 @@ class AgentLoop(
                     model = "openrouter/auto",
                     apiKey = "",
                     maxTokens = 4096,
-                    temperature = 0.7
+                    temperature = 0.7f
                 )
 
                 val toolDefs = toolRegistry.getToolDefinitions()
@@ -61,25 +62,23 @@ class AgentLoop(
                 val toolCalls = mutableListOf<ToolCall>()
                 var isDone = false
 
-                withContext(Dispatchers.IO) {
-                    response.events.collect { event ->
-                        when (event) {
-                            is ChatStreamEvent.TextDelta -> {
-                                assistantContent.append(event.delta)
-                                _state.value = AgentState.Streaming(assistantContent.toString())
-                                emit(AgentState.Streaming(assistantContent.toString()))
-                            }
-                            is ChatStreamEvent.Done -> {
-                                toolCalls.addAll(event.fullToolCalls)
-                                isDone = true
-                            }
-                            is ChatStreamEvent.Error -> {
-                                _state.value = AgentState.Error(event.message)
-                                emit(AgentState.Error(event.message))
-                                isDone = true
-                            }
-                            else -> {}
+                response.events.collect { event ->
+                    when (event) {
+                        is ChatStreamEvent.TextDelta -> {
+                            assistantContent.append(event.delta)
+                            _state.value = AgentState.Streaming(assistantContent.toString())
+                            emit(AgentState.Streaming(assistantContent.toString()))
                         }
+                        is ChatStreamEvent.Done -> {
+                            toolCalls.addAll(event.fullToolCalls)
+                            isDone = true
+                        }
+                        is ChatStreamEvent.Error -> {
+                            _state.value = AgentState.Error(event.message)
+                            emit(AgentState.Error(event.message))
+                            isDone = true
+                        }
+                        else -> {}
                     }
                 }
 
@@ -113,10 +112,9 @@ class AgentLoop(
 
                     conversation.add(
                         ChatMessage(
-                            role = "tool",
+                            role = MessageRole.TOOL,
                             content = truncatedResult,
-                            toolCallId = toolCall.id,
-                            name = toolCall.name
+                            toolCallId = toolCall.id
                         )
                     )
 

@@ -40,8 +40,8 @@ class ShellTool : BaseTool() {
         // Check for blocked commands
         val firstWord = command.split("\\s+".toRegex()).firstOrNull() ?: ""
         if (firstWord in blockedCommands) {
-            return "Fehler: Befehl '$firstBlock' ist aus Sicherheitsgründen gesperrt."
-                .replace("firstBlock", firstWord)
+            return "Fehler: Befehl '$firstWord' ist aus Sicherheitsgründen gesperrt."
+                .replace("firstWord", firstWord)
         }
 
         return withContext(Dispatchers.IO) {
