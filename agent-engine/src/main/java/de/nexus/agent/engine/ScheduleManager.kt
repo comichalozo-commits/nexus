@@ -1,4 +1,4 @@
-package de.nexus.agent.engine
+﻿package de.nexus.agent.engine
 
 import android.content.Context
 import androidx.work.Constraints
@@ -11,17 +11,12 @@ import androidx.work.OneTimeWorkRequest
 import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedInject
 import de.nexus.agent.core.common.Constants
 import de.nexus.agent.core.data.db.ScheduledJobDao
 import de.nexus.agent.core.data.db.ScheduledJobEntity
 import java.util.concurrent.TimeUnit
-import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
-class ScheduleManager @Inject constructor(
+class ScheduleManager  constructor(
     private val workManager: WorkManager,
     private val scheduledJobDao: ScheduledJobDao
 ) {

@@ -1,4 +1,4 @@
-package de.nexus.agent.feature.chat.ui
+﻿package de.nexus.agent.feature.chat.ui
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
@@ -51,7 +51,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import de.nexus.agent.feature.chat.model.MessageRole
 import de.nexus.agent.feature.chat.model.UiState
 import de.nexus.agent.feature.chat.viewmodel.ChatViewModel
@@ -61,7 +60,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun ChatScreen(
     onNavigateToSettings: () -> Unit,
-    viewModel: ChatViewModel = hiltViewModel()
+    viewModel: ChatViewModel = remember { ChatViewModel() }
 ) {
     val messages by viewModel.messages.collectAsState()
     val uiState by viewModel.uiState.collectAsState()

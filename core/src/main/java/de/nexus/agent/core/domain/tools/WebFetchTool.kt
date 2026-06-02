@@ -1,5 +1,7 @@
 package de.nexus.agent.core.domain.tools
 
+import de.nexus.agent.core.data.model.ToolParameterSchema
+import de.nexus.agent.core.data.model.ToolProperty
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -8,11 +10,6 @@ import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import java.util.concurrent.TimeUnit
 
-@Tool(
-    name = "web_fetch",
-    description = "Fetch a web page and extract its content as plain text or markdown.",
-    category = "web"
-)
 class WebFetchTool(
     private val httpClient: OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)
@@ -20,27 +17,35 @@ class WebFetchTool(
         .followRedirects(true)
         .followSslRedirects(true)
         .build()
-) : Tool {
+) : BaseTool() {
 
     override val name: String = "web_fetch"
     override val description: String = "Fetch a web page and extract its content as plain text or markdown."
-    override val parameterSchema: JsonSchema = JsonSchema(
+    override val parameters: ToolParameterSchema = ToolParameterSchema(
+        type = "object",
         properties = mapOf(
-            "url" to PropertySchema("string", "HTTP or HTTPS URL to fetch", null),
-            "maxChars" to PropertySchema("integer", "Maximum characters to return (default 5000)", 5000),
-            "extractMode" to PropertySchema("string", "Extraction mode", "markdown", enum = listOf("markdown", "text"))
+            "url" to ToolProperty(type = "string", description = "HTTP or HTTPS URL to fetch"),
+            "maxChars" to ToolProperty(type = "integer", description = "Maximum characters to return (default 5000)"),
+            "extractMode" to ToolProperty(
+                type = "string",
+                description = "Extraction mode: markdown or text",
+                enum = listOf("markdown", "text")
+            )
         ),
         required = listOf("url")
     )
 
-    override suspend fun execute(params: ToolExecutionParams): ToolResult = withContext(Dispatchers.IO) {
-        val url = params.params["url"] as? String
-            ?: return@withContext ToolResult.fail("Parameter 'url' is required")
-        val maxChars = (params.params["maxChars"] as? Number)?.toInt() ?: 5000
-        val extractMode = (params.params["extractMode"] as? String) ?: "markdown"
+    override suspend fun execute(arguments: String): String = withContext(Dispatchers.IO) {
+        val url = getStringParam(arguments, "url")
+        val maxChars = getIntParam(arguments, "maxChars", 5000)
+        val extractMode = getStringParam(arguments, "extractMode", "markdown")
+
+        if (url.isBlank()) {
+            return@withContext "Error: Parameter 'url' is required"
+        }
 
         if (!url.startsWith("http://") && !url.startsWith("https://")) {
-            return@withContext ToolResult.fail("URL must start with http:// or https://")
+            return@withContext "Error: URL must start with http:// or https://"
         }
 
         try {
@@ -51,7 +56,7 @@ class WebFetchTool(
 
             val response = httpClient.newCall(request).execute()
             if (!response.isSuccessful) {
-                return@withContext ToolResult.fail("HTTP ${response.code}: ${response.message}")
+                return@withContext "Error: HTTP ${response.code}: ${response.message}"
             }
 
             val contentType = response.header("Content-Type") ?: ""
@@ -73,17 +78,9 @@ class WebFetchTool(
                 Jsoup.parse(html).title()
             } catch (_: Exception) { url }
 
-            ToolResult.ok(
-                result = truncated,
-                metadata = mapOf(
-                    "url" to url,
-                    "title" to title,
-                    "extractedChars" to truncated.length,
-                    "extractMode" to extractMode
-                )
-            )
+            "Title: $title\n\n$truncated"
         } catch (e: Exception) {
-            ToolResult.fail("Failed to fetch URL: ${e.message}")
+            "Error: Failed to fetch URL: ${e.message}"
         }
     }
 
@@ -162,9 +159,7 @@ class WebFetchTool(
                             val alt = node.attr("alt")
                             if (src.isNotEmpty()) { sb.appendLine(); sb.appendLine("![$alt]($src)"); sb.appendLine() }
                         }
-                        "table" -> {
-                            renderTable(node, sb)
-                        }
+                        "table" -> renderTable(node, sb)
                         "strong", "b" -> {
                             val text = node.text().trim()
                             if (text.isNotEmpty()) sb.append("**$text** ")

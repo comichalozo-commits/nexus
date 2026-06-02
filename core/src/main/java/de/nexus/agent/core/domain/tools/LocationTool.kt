@@ -1,4 +1,4 @@
-package de.nexus.agent.core.domain.tools
+﻿package de.nexus.agent.core.domain.tools
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -8,15 +8,12 @@ import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
-import dagger.hilt.android.qualifiers.ApplicationContext
 import de.nexus.agent.core.data.model.ToolParameterSchema
 import de.nexus.agent.core.data.model.ToolProperty
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import java.util.Locale
-import javax.inject.Inject
-import javax.inject.Singleton
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -36,9 +33,9 @@ data class LocationInfo(
  *
  * Requires ACCESS_FINE_LOCATION or ACCESS_COARSE_LOCATION permission.
  */
-@Singleton
-class LocationTool @Inject constructor(
-    @ApplicationContext private val context: Context
+
+class LocationTool  constructor(
+     private val context: Context
 ) : BaseTool() {
 
     override val name: String = "location"

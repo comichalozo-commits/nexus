@@ -5,6 +5,7 @@ import de.nexus.agent.core.data.model.ChatStreamEvent
 import de.nexus.agent.core.data.model.LlmConfig
 import de.nexus.agent.core.data.model.StreamingChatResponse
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 /**
  * Fallback LLM provider that routes requests through OpenRouter.

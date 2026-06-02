@@ -2,11 +2,8 @@ package de.nexus.agent.core.domain.agent
 
 import de.nexus.agent.core.data.model.ToolDef
 import de.nexus.agent.core.domain.tools.Tool
-import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
-class ToolRegistry @Inject constructor() {
+class ToolRegistry {
     private val tools = mutableMapOf<String, Tool>()
 
     fun register(tool: Tool) {
@@ -21,12 +18,12 @@ class ToolRegistry @Inject constructor() {
 
     fun getAllTools(): List<Tool> = tools.values.toList()
 
-    fun getToolDefinitions(): List<ToolDef> {
+    fun getToolDefinitions(): List<Map<String, Any>> {
         return tools.values.map { tool ->
-            ToolDef(
-                name = tool.name,
-                description = tool.description,
-                parameters = tool.parameters
+            mapOf(
+                "name" to tool.name,
+                "description" to tool.description,
+                "parameters" to tool.parameters
             )
         }
     }

@@ -1,4 +1,4 @@
-package de.nexus.agent.feature.settings.ui
+﻿package de.nexus.agent.feature.settings.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -49,7 +49,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import de.nexus.agent.core.data.model.LlmProvider
 import de.nexus.agent.feature.settings.viewmodel.SettingsViewModel
 import de.nexus.agent.ui.theme.NexusAgentTheme
@@ -92,7 +91,7 @@ fun LlmProviderSettingsScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Zurück"
+                            contentDescription = "ZurÃ¼ck"
                         )
                     }
                 },
@@ -116,7 +115,7 @@ fun LlmProviderSettingsScreen(
             OutlinedTextField(
                 value = provider.apiKey,
                 onValueChange = { viewModel.updateProviderApiKey(providerId, it) },
-                label = { Text("API-Schlüssel") },
+                label = { Text("API-SchlÃ¼ssel") },
                 visualTransformation = if (showApiKey) {
                     VisualTransformation.None
                 } else {
@@ -124,7 +123,7 @@ fun LlmProviderSettingsScreen(
                 },
                 trailingIcon = {
                     IconButton(onClick = { showApiKey = !showApiKey }) {
-                        Text(if (showApiKey) "🔒" else "👁")
+                        Text(if (showApiKey) "ðŸ”’" else "ðŸ‘")
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),

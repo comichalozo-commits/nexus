@@ -1,20 +1,17 @@
-package de.nexus.agent.core.domain.tools
+﻿package de.nexus.agent.core.domain.tools
 
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import dagger.hilt.android.qualifiers.ApplicationContext
 import de.nexus.agent.core.data.model.ToolParameterSchema
 import de.nexus.agent.core.data.model.ToolProperty
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * Tool for reading and writing clipboard content.
  */
-@Singleton
-class ClipboardTool @Inject constructor(
-    @ApplicationContext private val context: Context
+
+class ClipboardTool  constructor(
+     private val context: Context
 ) : BaseTool() {
 
     override val name: String = "clipboard"

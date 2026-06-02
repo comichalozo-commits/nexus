@@ -1,4 +1,4 @@
-package de.nexus.agent.core.data.provider
+﻿package de.nexus.agent.core.data.provider
 
 import de.nexus.agent.core.common.safeCall
 import de.nexus.agent.core.data.model.ChatMessage
@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject

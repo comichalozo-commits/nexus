@@ -1,4 +1,4 @@
-package de.nexus.agent.engine
+﻿package de.nexus.agent.engine
 
 import android.content.Context
 import androidx.work.BackoffPolicy
@@ -11,7 +11,6 @@ import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkManager
 import androidx.work.Worker
 import androidx.work.WorkerParameters
-import dagger.hilt.android.qualifiers.ApplicationContext
 import de.nexus.agent.core.common.Constants
 import de.nexus.agent.core.data.db.MessageDao
 import de.nexus.agent.core.data.db.ScheduledJobDao
@@ -29,12 +28,9 @@ import de.nexus.agent.core.domain.memory.MemorySystem
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import java.util.concurrent.TimeUnit
-import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
-class AgentOrchestrator @Inject constructor(
-    @ApplicationContext private val context: Context,
+class AgentOrchestrator  constructor(
+     private val context: Context,
     private val messageDao: MessageDao,
     private val toolDao: ToolDao,
     private val conversationDao: ConversationDao,

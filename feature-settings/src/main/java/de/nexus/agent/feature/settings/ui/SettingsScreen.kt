@@ -1,4 +1,4 @@
-package de.nexus.agent.feature.settings.ui
+﻿package de.nexus.agent.feature.settings.ui
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -42,7 +42,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import de.nexus.agent.core.common.Constants
 import de.nexus.agent.feature.settings.viewmodel.SettingsViewModel
 import de.nexus.agent.ui.theme.NexusAgentTheme
@@ -52,7 +51,7 @@ import de.nexus.agent.ui.theme.NexusAgentTheme
 fun SettingsScreen(
     onNavigateToProviderConfig: (String) -> Unit,
     onNavigateBack: () -> Unit,
-    viewModel: SettingsViewModel = hiltViewModel()
+    viewModel: SettingsViewModel = remember { SettingsViewModel() }
 ) {
     val settingsState by viewModel.settingsState.collectAsState()
 
@@ -64,7 +63,7 @@ fun SettingsScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Zurück"
+                            contentDescription = "ZurÃ¼ck"
                         )
                     }
                 },
@@ -106,7 +105,7 @@ fun SettingsScreen(
                 SettingsSwitchItem(
                     icon = Icons.Default.Security,
                     title = "Overlay-Modus",
-                    subtitle = "Schwebendes Chat-Overlay über anderen Apps",
+                    subtitle = "Schwebendes Chat-Overlay Ã¼ber anderen Apps",
                     checked = settingsState.overlayEnabled,
                     onCheckedChange = { viewModel.setOverlayEnabled(it) }
                 )
@@ -137,13 +136,13 @@ fun SettingsScreen(
 
                 SettingsItem(
                     icon = Icons.Default.Build,
-                    title = "Fähigkeiten (Skills)",
+                    title = "FÃ¤higkeiten (Skills)",
                     subtitle = "${settingsState.skillCount} installierte Skills",
                     onClick = { /* Navigate to skills */ }
                 )
             }
 
-            SettingsSection(title = "Über") {
+            SettingsSection(title = "Ãœber") {
                 SettingsItem(
                     icon = Icons.Default.Info,
                     title = "Nexus Agent",

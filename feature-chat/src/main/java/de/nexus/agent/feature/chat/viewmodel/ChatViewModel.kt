@@ -1,31 +1,21 @@
 package de.nexus.agent.feature.chat.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import dagger.hilt.android.lifecycle.HiltViewModel
+import de.nexus.agent.core.ServiceLocator
 import de.nexus.agent.core.data.db.MessageDao
-import de.nexus.agent.core.data.db.ToolDao
-import de.nexus.agent.core.data.db.ConversationDao
 import de.nexus.agent.core.data.db.MessageEntity
-import de.nexus.agent.core.data.db.ToolEntity
-import de.nexus.agent.core.data.db.ConversationEntity
 import de.nexus.agent.core.data.model.ChatMessage
-import de.nexus.agent.core.data.model.LlmProvider
-import de.nexus.agent.core.data.model.LlmStreamChunk
 import de.nexus.agent.core.data.model.MessageRole
-import de.nexus.agent.core.data.model.ToolCall
-import de.nexus.agent.core.data.model.ToolCallStatus
-import de.nexus.agent.core.data.provider.CompositeProviderFactory
 import de.nexus.agent.core.domain.agent.AgentLoop
 import de.nexus.agent.core.domain.agent.AgentState
-import de.nexus.agent.core.domain.agent.ToolRegistry
-import kotlinx.coroutines.Job
+import de.nexus.agent.core.data.provider.LlmRouter
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 data class ChatUiState(
     val messages: List<ChatMessage> = emptyList(),
@@ -35,14 +25,12 @@ data class ChatUiState(
     val isGenerating: Boolean = false
 )
 
-@HiltViewModel
-class ChatViewModel @Inject constructor(
-    private val messageDao: MessageDao,
-    private val toolDao: ToolDao,
-    private val conversationDao: ConversationDao,
-    private val providerFactory: CompositeProviderFactory,
-    private val toolRegistry: ToolRegistry
-) : ViewModel() {
+class ChatViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val db = ServiceLocator.db
+    private val messageDao: MessageDao = db.messageDao()
+    private val toolRegistry = ServiceLocator.tools
+    private val llmRouter = ServiceLocator.providers
 
     private val _messages = MutableStateFlow<List<ChatMessage>>(emptyList())
     val messages: StateFlow<List<ChatMessage>> = _messages.asStateFlow()
@@ -53,8 +41,17 @@ class ChatViewModel @Inject constructor(
     private val _streamingText = MutableStateFlow("")
     val streamingText: StateFlow<String> = _streamingText.asStateFlow()
 
+    private val _uiState = MutableStateFlow(ChatUiState())
+    val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()
+
+    private val _providerStatus = MutableStateFlow<Map<String, Boolean>>(emptyMap())
+    val providerStatus: StateFlow<Map<String, Boolean>> = _providerStatus.asStateFlow()
+
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
+
     private val currentConversationId = "default"
-    private var generationJob: Job? = null
+    private var generationJob: kotlinx.coroutines.Job? = null
 
     init {
         loadMessages()
@@ -95,30 +92,8 @@ class ChatViewModel @Inject constructor(
                     it.role == MessageRole.USER || it.role == MessageRole.ASSISTANT
                 }
 
-                // Get default provider config - in production, load from DataStore
-                val provider = LlmProvider(
-                    id = "openrouter",
-                    name = "OpenRouter",
-                    baseUrl = "https://openrouter.ai/api/v1",
-                    apiKey = "",
-                    model = "openrouter/auto"
-                )
-
-                if (!provider.isConfigured) {
-                    _agentState.value = AgentState.Error("Kein LLM-Provider konfiguriert. Bitte erstelle einen API-Key in den Einstellungen.")
-
-                    val errorMessage = ChatMessage(
-                        role = MessageRole.ASSISTANT,
-                        content = "Kein LLM-Provider konfiguriert. Bitte gehe zu den Einstellungen und füge einen API-Key hinzu."
-                    )
-                    messageDao.insertMessage(errorMessage.toEntity(currentConversationId))
-                    _messages.update { it + errorMessage }
-                    return@launch
-                }
-
-                val llmProvider = providerFactory.create(provider)
                 val agentLoop = AgentLoop(
-                    provider = llmProvider,
+                    provider = llmRouter,
                     toolRegistry = toolRegistry
                 )
 
@@ -145,7 +120,7 @@ class ChatViewModel @Inject constructor(
                             _agentState.value = AgentState.Idle
                         }
                         is AgentState.ToolResultState -> {
-                            // Tool results are handled in the agent loop
+                            // Tool results handled in agent loop
                         }
                         else -> { /* Other states handled by UI */ }
                     }
@@ -173,6 +148,14 @@ class ChatViewModel @Inject constructor(
         generationJob?.cancel()
         _agentState.value = AgentState.Idle
         _streamingText.value = ""
+    }
+
+    fun dismissError() {
+        _errorMessage.value = null
+    }
+
+    fun onScrollPositionChanged(isAtBottom: Boolean) {
+        // Track scroll position for auto-scroll behavior
     }
 
     private fun MessageEntity.toChatMessage(): ChatMessage {

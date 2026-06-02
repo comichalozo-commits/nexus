@@ -1,7 +1,6 @@
-package de.nexus.agent.engine
+﻿package de.nexus.agent.engine
 
 import android.content.Context
-import dagger.hilt.android.qualifiers.ApplicationContext
 import de.nexus.agent.core.data.db.SkillDao
 import de.nexus.agent.core.data.db.SkillEntity
 import de.nexus.agent.core.domain.agent.ToolRegistry
@@ -13,12 +12,9 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
-class SkillExecutor @Inject constructor(
-    @ApplicationContext private val context: Context,
+class SkillExecutor  constructor(
+     private val context: Context,
     private val skillDao: SkillDao,
     private val toolRegistry: ToolRegistry
 ) {
@@ -30,7 +26,7 @@ class SkillExecutor @Inject constructor(
     suspend fun installSkill(manifestJson: String): Result<String> {
         return try {
             val manifest = json.parseToJsonElement(manifestJson) as? JsonObject
-                ?: return Result.failure(Exception("Ungültiges Skill-Manifest"))
+                ?: return Result.failure(Exception("UngÃ¼ltiges Skill-Manifest"))
 
             val id = manifest["id"]?.jsonPrimitive?.contentOrNull
                 ?: return Result.failure(Exception("Skill-ID fehlt"))
@@ -105,7 +101,7 @@ class SkillExecutor @Inject constructor(
             }
 
             val manifest = json.parseToJsonElement(skill.manifestJson) as? JsonObject
-                ?: return Result.failure(Exception("Ungültiges Manifest"))
+                ?: return Result.failure(Exception("UngÃ¼ltiges Manifest"))
 
             val actions = manifest["actions"]?.jsonObject
                 ?: return Result.failure(Exception("Keine Aktionen definiert"))

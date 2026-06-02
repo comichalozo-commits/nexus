@@ -1,14 +1,11 @@
-package de.nexus.agent.feature.overlay
+﻿package de.nexus.agent.feature.overlay
 
 import androidx.lifecycle.ViewModel
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import javax.inject.Inject
 
-@HiltViewModel
-class OverlayViewModel @Inject constructor() : ViewModel() {
+class OverlayViewModel  constructor() : ViewModel() {
 
     private val _currentApp = MutableStateFlow("")
     val currentApp: StateFlow<String> = _currentApp.asStateFlow()

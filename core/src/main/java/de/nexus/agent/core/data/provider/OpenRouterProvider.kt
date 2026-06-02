@@ -25,17 +25,12 @@ import okhttp3.ResponseBody
 import okio.BufferedSource
 import java.io.IOException
 import java.util.concurrent.TimeUnit
-import javax.inject.Inject
-import javax.inject.Singleton
-
-@Singleton
-class OpenRouterProvider @Inject constructor(
-    private val okHttpClient: OkHttpClient
+class OpenRouterProvider(
+    private val okHttpClient: OkHttpClient,
+    private val json: kotlinx.serialization.json.Json
 ) : LlmProviderInterface {
 
     override val providerType: String = "openrouter"
-    private val gson = Gson()
-
     private fun buildUrl(config: LlmConfig): String {
         return (config.baseUrl ?: "https://openrouter.ai/api/v1") + "/chat/completions"
     }

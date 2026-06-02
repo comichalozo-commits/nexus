@@ -1,10 +1,9 @@
-package de.nexus.agent.core.domain.tools
+﻿package de.nexus.agent.core.domain.tools
 
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.browser.customtabs.CustomTabsIntent
-import dagger.hilt.android.qualifiers.ApplicationContext
 import de.nexus.agent.core.data.model.ToolParameterSchema
 import de.nexus.agent.core.data.model.ToolProperty
 import kotlinx.coroutines.Dispatchers
@@ -12,15 +11,13 @@ import kotlinx.coroutines.withContext
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * Tool for opening URLs and searching the web in the browser.
  */
-@Singleton
-class BrowserTool @Inject constructor(
-    @ApplicationContext private val context: Context
+
+class BrowserTool  constructor(
+     private val context: Context
 ) : BaseTool() {
 
     override val name: String = "browser"
@@ -160,7 +157,7 @@ class BrowserTool @Inject constructor(
             val title = match.groupValues[3].replace(Regex("<[^>]*>"), "").trim()
             val cleanUrl = rawUrl.split("&").first()
             if (title.isNotBlank() && cleanUrl.startsWith("http")) {
-                results.add("• $title\n  $cleanUrl")
+                results.add("â€¢ $title\n  $cleanUrl")
             }
         }
         return results

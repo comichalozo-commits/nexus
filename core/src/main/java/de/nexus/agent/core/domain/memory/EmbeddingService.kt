@@ -1,11 +1,9 @@
-package de.nexus.agent.core.domain.memory
+﻿package de.nexus.agent.core.domain.memory
 
 import de.nexus.agent.core.data.model.LlmConfig
 import de.nexus.agent.core.data.provider.LlmProviderInterface
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * LRU cache for embeddings with thread-safe access.
@@ -35,8 +33,8 @@ class LruEmbeddingCache(private val maxSize: Int = 100) {
 /**
  * Service responsible for generating and caching text embeddings.
  */
-@Singleton
-class EmbeddingService @Inject constructor(
+
+class EmbeddingService  constructor(
     private val llmProvider: LlmProviderInterface
 ) {
     private val cache = LruEmbeddingCache(maxSize = 100)

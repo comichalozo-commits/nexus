@@ -1,4 +1,4 @@
-package de.nexus.agent.engine
+﻿package de.nexus.agent.engine
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -12,7 +12,6 @@ import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
 import androidx.core.app.NotificationCompat
-import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -22,12 +21,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import javax.inject.Inject
 
-@AndroidEntryPoint
 class AgentForegroundService : Service() {
 
-    @Inject
     lateinit var wakeLock: PowerManager.WakeLock
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
@@ -89,7 +85,7 @@ class AgentForegroundService : Service() {
         // Build and show initial notification
         val notification = buildNotification(
             title = taskName,
-            message = "Agent-Aufgabe wird ausgeführt…",
+            message = "Agent-Aufgabe wird ausgefÃ¼hrtâ€¦",
             progress = 0,
             maxProgress = 100,
             indeterminate = true
@@ -114,7 +110,7 @@ class AgentForegroundService : Service() {
         // Start task execution
         currentTaskJob = serviceScope.launch {
             try {
-                updateNotification("Ausführt…", 0, 100, true)
+                updateNotification("AusfÃ¼hrtâ€¦", 0, 100, true)
 
                 // Simulate / actual task execution would hook in here
                 // The task execution is managed by AgentTaskManager
@@ -130,7 +126,7 @@ class AgentForegroundService : Service() {
                     val elapsed = System.currentTimeMillis() - startTime
                     if (elapsed > INACTIVITY_TIMEOUT_MS) {
                         Timber.w("Inactivity timeout reached (${INACTIVITY_TIMEOUT_MS / 60000} min)")
-                        updateNotification("Timeout – Aufgabe beendet", 100, 100, false)
+                        updateNotification("Timeout â€“ Aufgabe beendet", 100, 100, false)
                         break
                     }
                 }
@@ -235,7 +231,7 @@ class AgentForegroundService : Service() {
             CHANNEL_NAME,
             NotificationManager.IMPORTANCE_LOW
         ).apply {
-            description = "Zeigt an, dass der Nexus Agent eine Hintergrundaufgabe ausführt"
+            description = "Zeigt an, dass der Nexus Agent eine Hintergrundaufgabe ausfÃ¼hrt"
             setShowBadge(false)
             setSound(null, null)
         }

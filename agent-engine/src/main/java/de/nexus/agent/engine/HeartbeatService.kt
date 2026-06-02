@@ -1,4 +1,4 @@
-package de.nexus.agent.engine
+﻿package de.nexus.agent.engine
 
 import android.Manifest
 import android.content.Context
@@ -8,10 +8,6 @@ import android.provider.CalendarContract
 import androidx.core.content.ContextCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import dagger.hilt.EntryPoint
-import dagger.hilt.InstallIn
-import dagger.hilt.android.EntryPointAccessors
-import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.flow.first
 import timber.log.Timber
 import java.util.Calendar
@@ -161,7 +157,7 @@ class HeartbeatWorker(
             parts.add("${notifications.size} neue Benachrichtigungen")
         }
 
-        return parts.joinToString(" · ")
+        return parts.joinToString(" Â· ")
     }
 
     data class CalendarEvent(
@@ -173,7 +169,7 @@ class HeartbeatWorker(
 }
 
 @EntryPoint
-@InstallIn(SingletonComponent::class)
+(SingletonComponent::class)
 interface HeartbeatEntryPoint {
     fun heartbeatWorker(): HeartbeatWorker
 }

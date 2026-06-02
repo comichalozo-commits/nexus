@@ -1,12 +1,10 @@
-package de.nexus.agent.core.domain.tools
+﻿package de.nexus.agent.core.domain.tools
 
 import de.nexus.agent.core.data.model.ToolParameterSchema
 import de.nexus.agent.core.data.model.ToolProperty
 import de.nexus.agent.core.domain.memory.MemorySystem
-import javax.inject.Inject
-import javax.inject.Singleton
 
-class MemoryTool @Inject constructor(
+class MemoryTool  constructor(
     private val memorySystem: MemorySystem
 ) : BaseTool() {
     override val name: String = "memory"
@@ -56,7 +54,7 @@ class MemoryTool @Inject constructor(
                 if (results.isEmpty()) {
                     "Keine Erinnerungen fuer \"$query\" gefunden."
                 } else {
-                    "Erinnerungen:\n${results.joinToString("\n") { "• ${it.content}" }}"
+                    "Erinnerungen:\n${results.joinToString("\n") { "â€¢ ${it.content}" }}"
                 }
             }
             "search" -> {
@@ -68,7 +66,7 @@ class MemoryTool @Inject constructor(
                 if (results.isEmpty()) {
                     "Keine Treffer fuer \"$query\"."
                 } else {
-                    "Suchergebnisse:\n${results.joinToString("\n") { "• ${it.content}" }}"
+                    "Suchergebnisse:\n${results.joinToString("\n") { "â€¢ ${it.content}" }}"
                 }
             }
             "forget" -> {

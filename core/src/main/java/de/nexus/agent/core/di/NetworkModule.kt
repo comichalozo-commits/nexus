@@ -1,53 +1,55 @@
 package de.nexus.agent.core.di
 
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
-import dagger.Module
-import dagger.Provides
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
+import android.content.Context
+import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
+import de.nexus.agent.core.data.provider.AnthropicProvider
+import de.nexus.agent.core.data.provider.GeminiProvider
+import de.nexus.agent.core.data.provider.OpenAiProvider
+import de.nexus.agent.core.data.provider.OpenRouterProvider
+import de.nexus.agent.core.data.model.ProviderType
+import de.nexus.agent.core.data.provider.LlmProviderInterface
+import de.nexus.agent.core.data.provider.LlmRouter
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.serialization.json.Json
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
-import javax.inject.Singleton
 
-@Module
-@InstallIn(SingletonComponent::class)
 object NetworkModule {
+    private val json = Json {
+        ignoreUnknownKeys = true
+        isLenient = true
+        encodeDefaults = false
+    }
 
-    @Provides
-    @Singleton
-    fun provideOkHttpClient(): OkHttpClient {
-        val loggingInterceptor = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
-        }
-
-        return OkHttpClient.Builder()
-            .addInterceptor(loggingInterceptor)
+    private val okHttpClient: OkHttpClient by lazy {
+        OkHttpClient.Builder()
             .connectTimeout(60, TimeUnit.SECONDS)
             .readTimeout(120, TimeUnit.SECONDS)
             .writeTimeout(60, TimeUnit.SECONDS)
-            .retryOnConnectionFailure(true)
             .build()
     }
 
-    @Provides
-    @Singleton
-    fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
-        return Retrofit.Builder()
-            .baseUrl("https://openrouter.ai/api/v1/")
-            .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-    }
+    fun provideOkHttpClient(): OkHttpClient = okHttpClient
 
-    @Provides
-    @Singleton
-    fun provideGson(): Gson {
-        return GsonBuilder()
-            .setLenient()
-            .create()
+    fun provideJson() = json
+
+    fun provideOpenRouterProvider(): OpenRouterProvider = OpenRouterProvider(okHttpClient, json)
+
+    fun provideAnthropicProvider(): AnthropicProvider = AnthropicProvider(okHttpClient, json)
+
+    fun provideOpenAiProvider(): OpenAiProvider = OpenAiProvider(okHttpClient, json)
+
+    fun provideGeminiProvider(): GeminiProvider = GeminiProvider(okHttpClient, json)
+
+    fun provideLlmRouter(context: Context): LlmRouter {
+        val providers = mutableMapOf<ProviderType, LlmProviderInterface>()
+        providers[ProviderType.OPENROUTER] = provideOpenRouterProvider()
+        providers[ProviderType.ANTHROPIC] = provideAnthropicProvider()
+        providers[ProviderType.OPENAI] = provideOpenAiProvider()
+        providers[ProviderType.GEMINI] = provideGeminiProvider()
+
+        return LlmRouter(providers, MutableStateFlow(null))
     }
 }

@@ -1,15 +1,12 @@
-package de.nexus.agent.core.domain.memory
+﻿package de.nexus.agent.core.domain.memory
 
 import de.nexus.agent.core.data.db.MemoryFactDao
 import de.nexus.agent.core.data.db.MemoryFactEntity
 import de.nexus.agent.core.data.model.MemoryFact
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
-class MemorySystem @Inject constructor(
+class MemorySystem  constructor(
     private val memoryFactDao: MemoryFactDao,
     private val embeddingService: EmbeddingService
 ) {

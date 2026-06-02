@@ -1,8 +1,7 @@
-package de.nexus.agent.core.domain.tools
+﻿package de.nexus.agent.core.domain.tools
 
 import android.content.Context
 import android.os.Environment
-import dagger.hilt.android.qualifiers.ApplicationContext
 import de.nexus.agent.core.data.model.ToolParameterSchema
 import de.nexus.agent.core.data.model.ToolProperty
 import kotlinx.coroutines.Dispatchers
@@ -10,16 +9,16 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 class FileTool(
-    @ApplicationContext private val context: Context
+     private val context: Context
 ) : BaseTool() {
     override val name: String = "file_operation"
-    override val description: String = "Lesen und Schreiben von Dateien auf dem Gerät. Unterstützte operationen: read, write, list, delete, exists."
+    override val description: String = "Lesen und Schreiben von Dateien auf dem GerÃ¤t. UnterstÃ¼tzte operationen: read, write, list, delete, exists."
     override val parameters: ToolParameterSchema = ToolParameterSchema(
         type = "object",
         properties = mapOf(
             "operation" to ToolProperty(
                 type = "string",
-                description = "Die auszuführende Operation",
+                description = "Die auszufÃ¼hrende Operation",
                 enum = listOf("read", "write", "list", "delete", "exists", "append", "info")
             ),
             "path" to ToolProperty(
@@ -63,7 +62,7 @@ class FileTool(
                     "read" -> {
                         if (!file.exists()) return@withContext "Fehler: Datei nicht gefunden: $path"
                         if (file.length() > 1_000_000) {
-                            return@withContext "Fehler: Datei zu groß (> 1MB). Erste 10000 Zeichen:\n" +
+                            return@withContext "Fehler: Datei zu groÃŸ (> 1MB). Erste 10000 Zeichen:\n" +
                                 file.readText().take(10000)
                         }
                         "Inhalt von $path:\n${file.readText()}"
@@ -76,7 +75,7 @@ class FileTool(
                     "append" -> {
                         file.parentFile?.mkdirs()
                         file.appendText(content)
-                        "Inhalt angehängt an $path"
+                        "Inhalt angehÃ¤ngt an $path"
                     }
                     "list" -> {
                         val dir = if (file.isDirectory) file else file.parentFile ?: context.filesDir
@@ -95,7 +94,7 @@ class FileTool(
                     "delete" -> {
                         if (!file.exists()) return@withContext "Fehler: Nicht gefunden: $path"
                         val deleted = file.deleteRecursively()
-                        if (deleted) "Gelöscht: $path" else "Fehler beim Löschen: $path"
+                        if (deleted) "GelÃ¶scht: $path" else "Fehler beim LÃ¶schen: $path"
                     }
                     "exists" -> {
                         val exists = file.exists()
@@ -111,8 +110,8 @@ class FileTool(
                         buildString {
                             appendLine("Pfad: ${file.absolutePath}")
                             appendLine("Typ: ${if (file.isDirectory) "Verzeichnis" else "Datei"}")
-                            appendLine("Größe: ${file.length()} bytes")
-                            appendLine("Letzte Änderung: ${java.text.SimpleDateFormat("dd.MM.yyyy HH:mm").format(java.util.Date(file.lastModified()))}")
+                            appendLine("GrÃ¶ÃŸe: ${file.length()} bytes")
+                            appendLine("Letzte Ã„nderung: ${java.text.SimpleDateFormat("dd.MM.yyyy HH:mm").format(java.util.Date(file.lastModified()))}")
                             appendLine("Lesbar: ${file.canRead()}")
                             appendLine("Schreibbar: ${file.canWrite()}")
                         }.trimEnd()

@@ -1,23 +1,19 @@
 package de.nexus.agent.feature.settings.viewmodel
 
-import android.content.Context
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
+import android.app.Application
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
-import de.nexus.agent.core.common.Constants
+import de.nexus.agent.core.ServiceLocator
 import de.nexus.agent.core.data.db.MemoryFactDao
 import de.nexus.agent.core.data.db.ScheduledJobDao
 import de.nexus.agent.core.data.db.SkillDao
 import de.nexus.agent.core.data.model.LlmProvider
-import de.nexus.agent.core.data.provider.CompositeProviderFactory
+import de.nexus.agent.core.data.provider.LlmRouter
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,7 +21,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 data class SettingsState(
     val selectedProviderId: String = "openrouter",
@@ -43,18 +38,18 @@ data class TestConnectionResult(
     val isLoading: Boolean = false
 )
 
-private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "nexus_settings")
+private val Application.dataStore by preferencesDataStore(name = "nexus_settings")
 
-@HiltViewModel
-class SettingsViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
-    private val providerFactory: CompositeProviderFactory,
-    private val memoryFactDao: MemoryFactDao,
-    private val scheduledJobDao: ScheduledJobDao,
-    private val skillDao: SkillDao
-) : ViewModel() {
+class SettingsViewModel(application: Application) : AndroidViewModel(application) {
 
+    private val context = application.applicationContext
     private val dataStore = context.dataStore
+    private val db = ServiceLocator.db
+    private val llmRouter = ServiceLocator.providers
+
+    private val memoryFactDao: MemoryFactDao = db.memoryFactDao()
+    private val scheduledJobDao: ScheduledJobDao = db.scheduledJobDao()
+    private val skillDao: SkillDao = db.skillDao()
 
     private val _settingsState = MutableStateFlow(SettingsState())
     val settingsState: StateFlow<SettingsState> = _settingsState.asStateFlow()
@@ -84,9 +79,8 @@ class SettingsViewModel @Inject constructor(
                     autonomyLevel = autonomy
                 )
 
-                // Load provider configs
                 val providers = mutableMapOf<String, LlmProvider>()
-                Constants.SUPPORTED_PROVIDERS.forEach { id ->
+                listOf("openrouter", "anthropic", "openai", "gemini").forEach { id ->
                     providers[id] = loadProviderFromPrefs(prefs, id)
                 }
                 _providers.value = providers
@@ -94,7 +88,7 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    private fun loadProviderFromPrefs(prefs: Preferences, providerId: String): LlmProvider {
+    private fun loadProviderFromPrefs(prefs: androidx.datastore.preferences.core.Preferences, providerId: String): LlmProvider {
         val prefix = "${providerId}_"
         return LlmProvider(
             id = providerId,
@@ -141,7 +135,8 @@ class SettingsViewModel @Inject constructor(
 
     fun getProvider(providerId: String): StateFlow<LlmProvider> {
         return _providers.map { it[providerId] ?: LlmProvider(id = providerId, name = providerId, baseUrl = "") }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _providers.value[providerId] ?: LlmProvider(id = providerId, name = providerId, baseUrl = ""))
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000),
+                _providers.value[providerId] ?: LlmProvider(id = providerId, name = providerId, baseUrl = ""))
     }
 
     fun selectProvider(providerId: String) {
@@ -237,10 +232,10 @@ class SettingsViewModel @Inject constructor(
                     return@launch
                 }
 
-                val llmProvider = providerFactory.create(provider)
-                val result = llmProvider.testConnection()
+                val result = llmRouter.healthCheck()
+                val isHealthy = result[de.nexus.agent.core.data.model.ProviderType.valueOf(providerId.uppercase())] ?: false
 
-                if (result.isSuccess && result.getOrNull() == true) {
+                if (isHealthy) {
                     _testConnectionResult.value = TestConnectionResult(
                         success = true,
                         message = "✅ Verbindung erfolgreich!"
@@ -248,7 +243,7 @@ class SettingsViewModel @Inject constructor(
                 } else {
                     _testConnectionResult.value = TestConnectionResult(
                         success = false,
-                        message = "❌ Verbindung fehlgeschlagen: ${result.exceptionOrNull()?.message ?: "Unbekannter Fehler"}"
+                        message = "❌ Verbindung fehlgeschlagen"
                     )
                 }
             } catch (e: Exception) {

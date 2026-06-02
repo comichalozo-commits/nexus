@@ -1,4 +1,4 @@
-package de.nexus.agent.feature.overlay
+﻿package de.nexus.agent.feature.overlay
 
 import android.accessibilityservice.AccessibilityService
 import android.app.Notification
@@ -57,13 +57,9 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
 
-@AndroidEntryPoint
 class FloatingChatService : AccessibilityService() {
 
-    @Inject
     lateinit var overlayViewModel: OverlayViewModel
 
     private var overlayView: View? = null
@@ -206,7 +202,7 @@ fun OverlayContent(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Close,
-                        contentDescription = "Schließen",
+                        contentDescription = "SchlieÃŸen",
                         modifier = Modifier.size(16.dp)
                     )
                 }
@@ -222,7 +218,7 @@ fun OverlayContent(
                         .background(MaterialTheme.colorScheme.surfaceVariant)
                 ) {
                     Text(
-                        text = "Overlay-Chat wird hier angezeigt.\nTippe zum Öffnen.",
+                        text = "Overlay-Chat wird hier angezeigt.\nTippe zum Ã–ffnen.",
                         modifier = Modifier.padding(12.dp),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -233,7 +229,6 @@ fun OverlayContent(
     }
 }
 
-@AndroidEntryPoint
 class NotificationListenerServiceImpl : NotificationListenerService() {
 
     override fun onNotificationPosted(sbn: StatusBarNotification?) {

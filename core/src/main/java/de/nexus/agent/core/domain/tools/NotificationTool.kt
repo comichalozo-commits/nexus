@@ -1,13 +1,10 @@
-package de.nexus.agent.core.domain.tools
+﻿package de.nexus.agent.core.domain.tools
 
 import android.content.Context
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
-import dagger.hilt.android.qualifiers.ApplicationContext
 import de.nexus.agent.core.data.model.ToolParameterSchema
 import de.nexus.agent.core.data.model.ToolProperty
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * Information about a single device notification.
@@ -26,9 +23,9 @@ data class NotificationInfo(
  *
  * Requires NotificationListenerService permission to be granted by the user.
  */
-@Singleton
-class NotificationTool @Inject constructor(
-    @ApplicationContext private val context: Context
+
+class NotificationTool  constructor(
+     private val context: Context
 ) : BaseTool() {
 
     override val name: String = "notification"
