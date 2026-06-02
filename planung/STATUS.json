@@ -1,41 +1,39 @@
 {
   "projektName": "Nexus Agent",
-  "version": "0.4.0",
-  "phase": "Phase 2: Setup & Grundlage — MERGE & BEREINIGUNG",
-  "status": "Alle 6 Entwicklung-Subagents durch. 2 Bereinigung-Subagents laufen.",
-  "fortschritt": 35,
-  "subagents": [
-    {"name": "android_project_setup", "status": "completed", "files": 76, "focus": "Gradle Build, Projektstruktur, Module"},
-    {"name": "core_infra", "status": "completed", "files": "~30", "focus": "Room DB, LLM Provider, Agent Loop, Memory"},
-    {"name": "chat_ui", "status": "completed", "files": 10, "focus": "ChatScreen, MessageBubble, Streaming, InputBar"},
-    {"name": "tools_system", "status": "failed_after_33min", "files": "~15", "focus": "Tools (teilweise abgestürzt)"},
-    {"name": "settings_manifest", "status": "completed", "files": 29, "focus": "Settings, Services, Manifest, Theme"},
-    {"name": "tools_overlay_fix", "status": "completed", "files": 9, "focus": "Fehlende Tools + Overlay"},
-    {"name": "missing_files", "status": "running", "focus": "14 fehlende Dateien (LlmModels, LlmRouter, DI Modules, etc.)"},
-    {"name": "build_cleanup", "status": "running", "focus": "Gradle Bereinigung, CI/CD, GitHub Templates"}
-  ],
+  "version": "0.5.0",
+  "phase": "Phase 2: Setup & Grundlage — GITHUB PUSH + CI/CD",
+  "status": "Code auf GitHub gepusht! Workflow läuft.",
+  "fortschritt": 50,
+  "github": {
+    "repo": "https://github.com/comichalozo-commits/nexus",
+    "branch": "main",
+    "workflow": "running",
+    "apkUrl": "https://github.com/comichalozo-commits/nexus/releases"
+  },
+  "subagents_total": 10,
+  "subagents_completed": 10,
   "erledigt": [
     "Recherche KI-Agent-Frameworks für Android",
     "Architektur-Entwurf & Tech-Stack",
-    "Multi-Modul Android Projekt (76 Dateien)",
+    "Multi-Modul Android Projekt (76+ Dateien)",
     "Core Infrastructure (DB, LLM Provider, Agent Loop, Memory)",
     "Chat UI (Compose, Material 3)",
     "18+ Device Tools",
     "Settings Screens & AndroidManifest",
     "Agent Engine (Orchestrator, Scheduler, Heartbeat, Skills)",
     "Floating Overlay Service",
-    "Cron-Jobs eingerichtet"
+    "Gradle Build Bereinigung + CI/CD",
+    "GitHub Push — comichalozo-commits/nexus"
   ],
   "inBearbeitung": [
-    "Subagent: 14 fehlende Dateien nachholen",
-    "Subagent: Gradle Build Bereinigung + CI/CD + GitHub Templates"
+    "GitHub Actions baut APK (Workflow läuft)"
   ],
   "stehtAus": [
-    "GitHub Repository anlegen + Push",
-    "Build-Verifikation (Gradle Sync)",
-    "Fehlerbehebung / Code-Review",
-    "Erste Integration Tests"
+    "APK Download und Test",
+    "Code-Review und Fehlerbehebung",
+    "Fehlende Tools implementieren (AccessibilityControl, Contacts, ToolRegistry vereinheitlichen)",
+    "Build-APK verifizieren"
   ],
-  "letztesUpdate": "2026-06-02T12:15:00+02:00",
-  "notizen": "Parallele Subagents haben ~170 Dateien erstellt. 14 Dateien fehlen noch (wurden von abgestürztem Subagent nicht erstellt). Bereinigung läuft."
+  "letztesUpdate": "2026-06-02T12:45:00+02:00",
+  "notizen": "Alle 10 Subagents fertig. Code auf GitHub. Workflow baut APK. "
 }
