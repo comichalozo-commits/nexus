@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App -->
+    <string name="app_name">Nexus Agent</string>
+
+    <!-- Navigation / Titles -->
+    <string name="chat_title">Chat</string>
+    <string name="settings_title">Einstellungen</string>
+    <string name="provider_config_title">Provider Konfiguration</string>
+    <string name="tool_settings_title">Tool-Einstellungen</string>
+    <string name="skill_editor_title">Skill-Editor</string>
+    <string name="memory_browser_title">Erinnerungen</string>
+    <string name="autonomy_settings_title">Autonomie</string>
+
+    <!-- Chat -->
+    <string name="send_hint">Nachricht eingeben…</string>
+    <string name="send">Senden</string>
+    <string name="attach">Anhang</string>
+    <string name="typing">Schreibt…</string>
+    <string name="thinking">Denkt nach…</string>
+    <string name="voice_input">Spracheingabe</string>
+    <string name="clear_chat">Chat löschen</string>
+    <string name="copy_message">Kopieren</string>
+    <string name="retry">Erneut versuchen</string>
+
+    <!-- Settings Groups -->
+    <string name="settings_group_llm">LLM Provider</string>
+    <string name="settings_group_autonomy">Autonomie</string>
+    <string name="settings_group_tools">Tools</string>
+    <string name="settings_group_memory">Erinnerungen</string>
+    <string name="settings_group_appearance">Erscheinungsbild</string>
+    <string name="settings_group_about">Über</string>
+    <string name="settings_group_permissions">Berechtigungen</string>
+
+    <!-- Settings Items -->
+    <string name="active_provider">Aktiver Provider</string>
+    <string name="model">Modell</string>
+    <string name="autonomy_level">Autonomie-Stufe</string>
+    <string name="tools_overview">Tool-Übersicht</string>
+    <string name="memory_statistics">Memory-Statistiken</string>
+    <string name="memory_clear">Memory löschen</string>
+    <string name="memory_description">Verwaltete Fakten und Kontexte</string>
+    <string name="dark_mode">Dunkelmodus</string>
+    <string name="dynamic_colors">Dynamische Farben</string>
+    <string name="system_default">Systemstandard</string>
+    <string name="light">Hell</string>
+    <string name="dark">Dunkel</string>
+    <string name="version">Version</string>
+    <string name="license">Lizenz</string>
+
+    <!-- LLM Provider Settings -->
+    <string name="provider_selection">Provider wählen</string>
+    <string name="api_key">API-Schlüssel</string>
+    <string name="api_key_masked">••••••••••••</string>
+    <string name="base_url">Basis-URL</string>
+    <string name="base_url_hint">https://api.example.com/v1</string>
+    <string name="temperature">Temperatur</string>
+    <string name="max_tokens">Max. Tokens</string>
+    <string name="streaming">Streaming</string>
+    <string name="streaming_description">Antworten streamen während der Generierung</string>
+    <string name="test_connection">Verbindung testen</string>
+    <string name="connection_ok">✅ Verbindung erfolgreich</string>
+    <string name="connection_failed">❌ Verbindung fehlgeschlagen</string>
+    <string name="save">Speichern</string>
+    <string name="delete">Löschen</string>
+    <string name="cancel">Abbrechen</string>
+
+    <!-- Autonomy -->
+    <string name="autonomy_full_auto">Vollautomatisch</string>
+    <string name="autonomy_full_auto_desc">Agent handeln autonom, ohne Rückfrage</string>
+    <string name="autonomy_balanced">Ausbalanciert</string>
+    <string name="autonomy_balanced_desc">Wichtige Aktionen bestätigen</string>
+    <string name="autonomy_cautious">Vorsichtig</string>
+    <string name="autonomy_cautious_desc">Jede Aktion bestätigen</string>
+    <string name="custom_policy">Eigene Richtlinie</string>
+    <string name="tool_category">Tool-Kategorie</string>
+    <string name="policy_assignment">Policy-Zuordnung</string>
+
+    <!-- Notifications -->
+    <string name="foreground_service_running">Nexus Agent läuft</string>
+    <string name="foreground_service_description">Agent-Aufgabe wird ausgeführt</string>
+    <string name="notification_channel_agent">Agent-Benachrichtigungen</string>
+    <string name="notification_channel_heartbeat">Heartbeat</string>
+    <string name="notification_channel_jobs">Geplante Aufgaben</string>
+    <string name="accessibility_service_description">Nexus Agent Zugangsdienst ermöglicht schwebende Chat-Overlays über anderen Apps und den Zugriff auf Bildschirminhalte für die Kontextanalyse.</string>
+    <string name="notification_listener_description">Benachrichtigungs-Zugriff für intelligente Antworten und proaktive Vorschläge.</string>
+
+    <!-- Error / Status -->
+    <string name="error_network">Netzwerkfehler</string>
+    <string name="error_generic">Ein Fehler ist aufgetreten</string>
+    <string name="error_permission_denied">Berechtigung verweigert</string>
+    <string name="error_api_key_missing">API-Schlüssel fehlt</string>
+    <string name="error_model_not_available">Modell nicht verfügbar</string>
+    <string name="status_connected">Verbunden</string>
+    <string name="status_disconnected">Getrennt</string>
+    <string name="status_loading">Laden…</string>
+
+    <!-- Permission Rationales -->
+    <string name="permission_camera_rationale">Kamera-Zugriff wird benötigt, um Fotos für den Agenten zu machen.</string>
+    <string name="permission_location_rationale">Standort-Zugriff ermöglicht kontextbezogene Antworten.</string>
+    <string name="permission_sms_rationale">SMS-Zugriff wird benötigt, um Nachrichten zu lesen und zu senden.</string>
+    <string name="permission_contacts_rationale">Kontaktzugriff ermöglicht dem Agenten, Anrufer zu identifizieren.</string>
+    <string name="permission_calendar_rationale">Kalenderzugriff ermöglicht Termin-Erinnerungen.</string>
+    <string name="permission_storage_rationale">Speicherzugriff wird zum Anhängen von Dateien benötigt.</string>
+    <string name="permission_microphone_rationale">Mikrofonzugriff wird für Spracheingabe benötigt.</string>
+    <string name="permission_notifications_rationale">Benachrichtigungen werden benötigt, um den Agenten-Prozess im Vordergrund anzuzeigen.</string>
+    <string name="permission_overlay_rationale">Bildschirmberechtigung wird für schwebende Chat-Overlays benötigt.</string>
+    <string name="permission_accessibility_rationale">Zugangsdienst wird für Overlay-Funktionen und Kontextanalyse benötigt.</string>
+
+    <!-- Overlay / Floating -->
+    <string name="overlay_title">Nexus Agent</string>
+    <string name="overlay_expand">Erweitern</string>
+    <string name="overlay_collapse">Minimieren</string>
+    <string name="overlay_close">Schließen</string>
+
+    <!-- Skills -->
+    <string name="skills">Fähigkeiten</string>
+    <string name="skill_active">Aktiv</string>
+    <string name="skill_inactive">Inaktiv</string>
+    <string name="skill_add">Skill hinzufügen</string>
+
+    <!-- Scheduled Tasks -->
+    <string name="scheduled_tasks">Geplante Aufgaben</string>
+    <string name="task_add">Aufgabe hinzufügen</string>
+    <string name="task_next_run">Nächste Ausführung</string>
+    <string name="task_status_pending">Ausstehend</string>
+    <string name="task_status_running">Läuft</string>
+    <string name="task_status_completed">Abgeschlossen</string>
+    <string name="task_status_failed">Fehlgeschlagen</string>
+
+    <!-- About -->
+    name="about_description">Nexus Agent – Dein persönlicher KI-Assistent auf Android</string>
+    <string name="about_source_code">Quellcode</string>
+    <string name="about_privacy">Datenschutz</string>
+    <string name="about_third_party">Open Source Lizenzen</string>
+</resources>
