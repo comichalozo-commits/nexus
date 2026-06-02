@@ -28,6 +28,10 @@ android {
     buildFeatures {
         compose = true
     }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.15"
+    }
 }
 
 dependencies {
@@ -57,8 +61,10 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
 
     implementation(libs.coil.compose)
+    implementation(libs.accompanist.permissions)
+    implementation(libs.jsoup)
 
-    testImplementation(libs.junit)
+    testImplementation(libs.junit.jupiter.api)
     testImplementation(libs.mockk)
     testImplementation(libs.turbine)
     androidTestImplementation(libs.androidx.junit)

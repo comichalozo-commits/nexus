@@ -2,93 +2,102 @@ package de.nexus.agent.core.data.model
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-
-/**
- * Represents a single chat message sent to or received from an LLM.
- */
-data class ChatMessage(
-    val role: String, // "system", "user", "assistant", "tool"
-    val content: String?,
-    val toolCalls: List<ToolCall>? = null,
-    val toolCallId: String? = null,
-    val name: String? = null
-)
-
-/**
- * Represents a tool/function call requested by the LLM.
- */
-data class ToolCall(
-    val id: String,
-    val name: String,
-    val arguments: String // JSON string of arguments
-)
-
-/**
- * Sealed class representing events emitted during a streaming chat response.
- */
-sealed class ChatStreamEvent {
-    data class TextDelta(val delta: String) : ChatStreamEvent()
-    data class ToolCallStart(val id: String, val name: String) : ChatStreamEvent()
-    data class ToolCallDelta(val id: String, val partialArguments: String) : ChatStreamEvent()
-    data class Done(val fullContent: String, val fullToolCalls: List<ToolCall>) : ChatStreamEvent()
-    data class Error(val message: String, val cause: Throwable? = null) : ChatStreamEvent()
-    data class UsageInfo(val promptTokens: Int, val completionTokens: Int, val totalTokens: Int) : ChatStreamEvent()
-}
+import kotlinx.serialization.Serializable
 
 /**
  * Configuration for an LLM request.
  */
+@Serializable
 data class LlmConfig(
-    val provider: String, // "openrouter", "openai", "anthropic", "gemini"
-    val model: String,
+    val provider: ProviderType = ProviderType.OPENROUTER,
+    val model: String = "openrouter/auto",
     val temperature: Float = 0.7f,
     val maxTokens: Int = 4096,
-    val apiKey: String,
+    val apiKey: String = "",
     val baseUrl: String? = null
 )
 
 /**
- * Wraps a streaming chat response exposing events as a StateFlow.
+ * Supported LLM provider types.
  */
-class StreamingChatResponse {
-    private val _events = MutableStateFlow<ChatStreamEvent?>(null)
-    val events: StateFlow<ChatStreamEvent?> = _events.asStateFlow()
+@Serializable
+enum class ProviderType {
+    OPENROUTER,
+    ANTHROPIC,
+    OPENAI,
+    GEMINI
+}
 
-    private val _fullContent = StringBuilder()
-    private val _toolCallBuilders = mutableMapOf<String, ToolCallBuilder>()
-    private var _isComplete = false
+/**
+ * Events emitted during a streaming chat response.
+ */
+@Serializable
+sealed class ChatStreamEvent {
+    data class TextDelta(val delta: String) : ChatStreamEvent()
+    data class ToolCallStart(val id: String, val name: String) : ChatStreamEvent()
+    data class ToolCallDelta(val id: String, val args: String) : ChatStreamEvent()
+    data class Done(
+        val fullContent: String = "",
+        val fullToolCalls: List<ToolCall> = emptyList()
+    ) : ChatStreamEvent()
+    data class Error(val message: String, val cause: Throwable? = null) : ChatStreamEvent()
+    data class UsageInfo(
+        val promptTokens: Int = 0,
+        val completionTokens: Int = 0,
+        val totalTokens: Int = 0
+    ) : ChatStreamEvent()
+}
 
-    val isComplete: Boolean get() = _isComplete
-    val fullContent: String get() = _fullContent.toString()
+/**
+ * Wrapper around a stream of chat events.
+ * Can be constructed with an existing StateFlow or with an internal MutableStateFlow.
+ */
+class StreamingChatResponse(
+    events: StateFlow<ChatStreamEvent>? = null
+) {
+    private val _events: MutableStateFlow<ChatStreamEvent> = if (events != null) {
+        MutableStateFlow(events.value)
+    } else {
+        MutableStateFlow(ChatStreamEvent.Done())
+    }
+
+    val events: StateFlow<ChatStreamEvent> = _events
 
     fun emit(event: ChatStreamEvent) {
-        when (event) {
-            is ChatStreamEvent.TextDelta -> _fullContent.append(event.delta)
-            is ChatStreamEvent.ToolCallStart -> {
-                _toolCallBuilders[event.id] = ToolCallBuilder(event.id, event.name)
-            }
-            is ChatStreamEvent.ToolCallDelta -> {
-                _toolCallBuilders[event.id]?.appendArguments(event.partialArguments)
-            }
-            is ChatStreamEvent.Done -> {
-                _isComplete = true
-            }
-            is ChatStreamEvent.Error -> {
-                _isComplete = true
-            }
-            else -> {}
-        }
         _events.value = event
     }
-
-    fun getToolCalls(): List<ToolCall> {
-        return _toolCallBuilders.values.map { it.build() }
-    }
-
-    private class ToolCallBuilder(val id: String, val name: String) {
-        private val argsBuilder = StringBuilder()
-        fun appendArguments(partial: String) { argsBuilder.append(partial) }
-        fun build(): ToolCall = ToolCall(id, name, argsBuilder.toString())
-    }
 }
+
+/**
+ * Token usage tracking for LLM requests.
+ */
+data class TokenUsage(
+    val promptTokens: Int = 0,
+    val completionTokens: Int = 0,
+    val totalTokens: Int = 0
+) {
+    fun plus(other: TokenUsage): TokenUsage = TokenUsage(
+        promptTokens = this.promptTokens + other.promptTokens,
+        completionTokens = this.completionTokens + other.completionTokens,
+        totalTokens = this.totalTokens + other.totalTokens
+    )
+}
+
+/**
+ * Tool definition in OpenAI function-calling format.
+ */
+@Serializable
+data class ToolDefinition(
+    val name: String,
+    val description: String,
+    val parameters: Map<String, Any> = emptyMap()
+)
+
+/**
+ * Context for a single agent loop run.
+ */
+data class AgentContext(
+    val messages: MutableList<ChatMessage> = mutableListOf(),
+    val config: LlmConfig = LlmConfig(),
+    val conversationId: String = "default"
+)

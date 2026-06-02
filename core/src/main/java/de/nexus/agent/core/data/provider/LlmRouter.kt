@@ -1,196 +1,129 @@
 package de.nexus.agent.core.data.provider
 
 import de.nexus.agent.core.data.model.ChatMessage
+import de.nexus.agent.core.data.model.ChatStreamEvent
 import de.nexus.agent.core.data.model.LlmConfig
+import de.nexus.agent.core.data.model.ProviderType
 import de.nexus.agent.core.data.model.StreamingChatResponse
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import javax.inject.Inject
 import javax.inject.Singleton
 
-enum class LlmTask {
+/**
+ * Task types used for intelligent provider routing.
+ */
+enum class TaskType {
     CHAT,
-    EMBEDDING,
-    VISION,
     TOOL_CALL,
-    QUICK_RESPONSE
+    VISION,
+    EMBEDDING,
+    REASONING
 }
 
 /**
- * Router that manages multiple LLM providers, handles fallback, and health checks.
+ * Routes LLM requests across multiple providers with fallback support.
+ *
+ * Providers are tried in priority order (primary → secondary → tertiary).
+ * If a provider fails, the next one is attempted automatically.
  */
 @Singleton
 class LlmRouter @Inject constructor(
-    private val openRouterProvider: OpenRouterProvider,
-    private val openAiProvider: OpenAiProvider,
-    private val anthropicProvider: AnthropicProvider,
-    private val geminiProvider: GeminiProvider
-) : LlmProviderInterface {
-
-    override val providerType: String = "router"
-
-    private val providers = mapOf(
-        "openrouter" to openRouterProvider,
-        "openai" to openAiProvider,
-        "anthropic" to anthropicProvider,
-        "gemini" to geminiProvider
-    )
-
-    private val healthStatus = mutableMapOf<String, Boolean>()
-    private val providerMutex = Mutex()
+    private val providers: Map<ProviderType, @JvmSuppressWildcards LlmProviderInterface>
+) {
+    private val _activeProvider = MutableStateFlow<ProviderType?>(null)
+    val activeProviderType: StateFlow<ProviderType?> = _activeProvider
 
     /**
-     * Returns the list of providers ordered by priority and health.
+     * Sends a chat request, trying providers in fallback order.
+     * Starts with the config's provider, then tries all others.
      */
-    private fun getOrderedProviders(requestedProvider: String? = null): List<LlmProviderInterface> {
-        if (requestedProvider != null && providers.containsKey(requestedProvider)) {
-            val requested = providers[requestedProvider]!!
-            val rest = providers.values.filter { it.providerType != requestedProvider }
-                .sortedByIndexed { _, p -> if (healthStatus[p.providerType] == true) 0 else 1 }
-            return listOf(requested) + rest
-        }
-
-        // Auto-detect: sort by health
-        return providers.values.sortedByIndexed { _, p ->
-            if (healthStatus[p.providerType] == true) 0 else 1
-        }
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    private inline fun <T> Iterable<T>.sortedByIndexed(crossinline selector: (Int, T) -> Comparable<*>?): List<T> {
-        return mapIndexed { index, item -> index to item }
-            .sortedWith(compareBy({ selector(it.first, it.second) as Comparable<Any> }, { it.first }))
-            .map { it.second }
-    }
-
-    /**
-     * Determines the best provider for a given task based on capabilities.
-     */
-    fun bestProviderForTask(task: LlmTask): String {
-        return when (task) {
-            LlmTask.EMBEDDING -> "openai" // text-embedding-ada-002
-            LlmTask.VISION -> "openai" // GPT-4o vision
-            LlmTask.TOOL_CALL -> "anthropic" // Claude best-in-class tool use
-            LlmTask.QUICK_RESPONSE -> "gemini" // Gemini 2.5 Flash
-            LlmTask.CHAT -> "anthropic" // Default to Claude
-        }
-    }
-
-    /**
-     * Returns the currently active (healthy) provider with highest priority.
-     */
-    fun getActiveProvider(): LlmProviderInterface {
-        return getOrderedProviders().firstOrNull { p ->
-            healthStatus[p.providerType] != false
-        } ?: anthropicProvider
-    }
-
-    /**
-     * Runs health checks on all providers.
-     */
-    suspend fun healthCheck(): Map<String, Boolean> {
-        providerMutex.withLock {
-            providers.forEach { (type, provider) ->
-                healthStatus[type] = try {
-                    provider.healthCheck()
-                } catch (e: Exception) {
-                    false
-                }
-            }
-            return healthStatus.toMap()
-        }
-    }
-
-    override suspend fun chat(
+    suspend fun chat(
         messages: List<ChatMessage>,
         tools: List<Map<String, Any>>?,
         config: LlmConfig
     ): StreamingChatResponse {
-        val orderedProviders = getOrderedProviders(config.provider)
+        val orderedProviders = buildFallbackOrder(config.provider)
+
         var lastException: Exception? = null
 
-        for (provider in orderedProviders) {
+        for ((type, provider) in orderedProviders) {
             try {
-                if (!provider.supportsTools() && !tools.isNullOrEmpty()) continue
-
-                val response = provider.chat(messages, tools, config)
-
-                // Check if the response produced any content or error
-                var hasError = false
-                response.events.collect { event ->
-                    if (event is de.nexus.agent.core.data.model.ChatStreamEvent.Error) {
-                        hasError = true
-                        lastException = event.cause ?: RuntimeException(event.message)
-                    }
-                }
-
-                if (!hasError) {
-                    // Return the already-consumed response from this attempt
-                    return provider.chat(messages, tools, config)
-                }
+                _activeProvider.value = type
+                return provider.chat(messages, tools, config)
             } catch (e: Exception) {
                 lastException = e
+                // Try next provider
                 continue
             }
         }
 
-        // All providers failed
-        val errorResponse = StreamingChatResponse()
-        errorResponse.emit(
-            de.nexus.agent.core.data.model.ChatStreamEvent.Error(
-                "All providers failed: ${lastException?.message ?: "Unknown error"}",
-                lastException
+        // All providers failed — return error stream
+        val errorFlow = MutableStateFlow<ChatStreamEvent>(
+            ChatStreamEvent.Error(
+                message = "All providers failed. Last error: ${lastException?.message ?: "Unknown"}",
+                cause = lastException
             )
         )
-        return errorResponse
-    }
-
-    override suspend fun complete(prompt: String, config: LlmConfig): String {
-        val orderedProviders = getOrderedProviders(config.provider)
-
-        for (provider in orderedProviders) {
-            try {
-                return provider.complete(prompt, config)
-            } catch (e: Exception) {
-                continue
-            }
-        }
-
-        throw RuntimeException("All providers failed for complete()")
-    }
-
-    override suspend fun embed(text: String, config: LlmConfig?): FloatArray {
-        val embeddingConfig = config ?: LlmConfig(
-            provider = "openai",
-            model = "text-embedding-ada-002",
-            apiKey = ""
-        )
-
-        val orderedProviders = getOrderedProviders(embeddingConfig.provider)
-            .filter { it.supportsTools() } // Proxy for "supports strong API"
-
-        for (provider in orderedProviders) {
-            try {
-                return provider.embed(text, embeddingConfig)
-            } catch (e: Exception) {
-                continue
-            }
-        }
-
-        throw RuntimeException("All providers failed for embed()")
-    }
-
-    override fun supportsTools(): Boolean = true
-    override fun supportsStreaming(): Boolean = true
-    override fun supportsVision(): Boolean = true
-
-    override suspend fun healthCheck(): Boolean {
-        val results = healthCheck()
-        return results.values.any { it }
+        return StreamingChatResponse(events = errorFlow)
     }
 
     /**
-     * Get a direct reference to a specific provider.
+     * Checks health of all configured providers.
      */
-    fun getProvider(type: String): LlmProviderInterface? = providers[type]
+    suspend fun healthCheck(): Map<ProviderType, Boolean> {
+        val results = mutableMapOf<ProviderType, Boolean>()
+        for ((type, provider) in providers) {
+            results[type] = try {
+                provider.healthCheck()
+            } catch (_: Exception) {
+                false
+            }
+        }
+        return results
+    }
+
+    /**
+     * Returns the currently active (last used) provider.
+     */
+    fun getActiveProvider(): LlmProviderInterface? {
+        val type = _activeProvider.value
+        return if (type != null) providers[type] else providers.values.firstOrNull()
+    }
+
+    /**
+     * Selects the best provider for a given task type based on capabilities.
+     */
+    fun bestProviderForTask(task: TaskType): LlmProviderInterface? {
+        return when (task) {
+            TaskType.CHAT -> providers.values.firstOrNull()
+            TaskType.TOOL_CALL -> providers.values.filter { it.supportsTools() }.firstOrNull()
+                ?: providers.values.firstOrNull()
+            TaskType.VISION -> providers.values.filter { it.supportsVision() }.firstOrNull()
+                ?: providers.values.firstOrNull()
+            TaskType.EMBEDDING -> providers.values.firstOrNull()
+            TaskType.REASONING -> providers[ProviderType.OPENROUTER]
+                ?: providers[ProviderType.ANTHROPIC]
+                ?: providers.values.firstOrNull()
+        }
+    }
+
+    /**
+     * Builds the fallback order: primary first, then all others in priority order.
+     */
+    private fun buildFallbackOrder(primary: ProviderType): List<Pair<ProviderType, LlmProviderInterface>> {
+        val ordered = mutableListOf<Pair<ProviderType, LlmProviderInterface>>()
+
+        // Add primary first
+        providers[primary]?.let { ordered.add(primary to it) }
+
+        // Add remaining providers in enum order
+        for (type in ProviderType.entries) {
+            if (type != primary && providers.containsKey(type)) {
+                ordered.add(type to providers[type]!!)
+            }
+        }
+
+        return ordered
+    }
 }

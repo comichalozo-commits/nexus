@@ -1,9 +1,41 @@
 {
-  "project": "projekt-ki-agent-android",
-  "status": "in_progress",
-  "phase": "module_creation_complete",
-  "modules": ["app", "core", "agent-engine", "feature-chat", "feature-overlay", "feature-settings"],
-  "techStack": ["Kotlin", "Jetpack Compose", "Gradle"],
-  "lastUpdate": "2026-06-02T11:50:00+02:00",
-  "nextSteps": ["github_repo_setup", "ci_cd_pipeline", "feature_implementation"]
+  "projektName": "Nexus Agent",
+  "version": "0.4.0",
+  "phase": "Phase 2: Setup & Grundlage — MERGE & BEREINIGUNG",
+  "status": "Alle 6 Entwicklung-Subagents durch. 2 Bereinigung-Subagents laufen.",
+  "fortschritt": 35,
+  "subagents": [
+    {"name": "android_project_setup", "status": "completed", "files": 76, "focus": "Gradle Build, Projektstruktur, Module"},
+    {"name": "core_infra", "status": "completed", "files": "~30", "focus": "Room DB, LLM Provider, Agent Loop, Memory"},
+    {"name": "chat_ui", "status": "completed", "files": 10, "focus": "ChatScreen, MessageBubble, Streaming, InputBar"},
+    {"name": "tools_system", "status": "failed_after_33min", "files": "~15", "focus": "Tools (teilweise abgestürzt)"},
+    {"name": "settings_manifest", "status": "completed", "files": 29, "focus": "Settings, Services, Manifest, Theme"},
+    {"name": "tools_overlay_fix", "status": "completed", "files": 9, "focus": "Fehlende Tools + Overlay"},
+    {"name": "missing_files", "status": "running", "focus": "14 fehlende Dateien (LlmModels, LlmRouter, DI Modules, etc.)"},
+    {"name": "build_cleanup", "status": "running", "focus": "Gradle Bereinigung, CI/CD, GitHub Templates"}
+  ],
+  "erledigt": [
+    "Recherche KI-Agent-Frameworks für Android",
+    "Architektur-Entwurf & Tech-Stack",
+    "Multi-Modul Android Projekt (76 Dateien)",
+    "Core Infrastructure (DB, LLM Provider, Agent Loop, Memory)",
+    "Chat UI (Compose, Material 3)",
+    "18+ Device Tools",
+    "Settings Screens & AndroidManifest",
+    "Agent Engine (Orchestrator, Scheduler, Heartbeat, Skills)",
+    "Floating Overlay Service",
+    "Cron-Jobs eingerichtet"
+  ],
+  "inBearbeitung": [
+    "Subagent: 14 fehlende Dateien nachholen",
+    "Subagent: Gradle Build Bereinigung + CI/CD + GitHub Templates"
+  ],
+  "stehtAus": [
+    "GitHub Repository anlegen + Push",
+    "Build-Verifikation (Gradle Sync)",
+    "Fehlerbehebung / Code-Review",
+    "Erste Integration Tests"
+  ],
+  "letztesUpdate": "2026-06-02T12:15:00+02:00",
+  "notizen": "Parallele Subagents haben ~170 Dateien erstellt. 14 Dateien fehlen noch (wurden von abgestürztem Subagent nicht erstellt). Bereinigung läuft."
 }
