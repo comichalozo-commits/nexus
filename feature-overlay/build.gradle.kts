@@ -1,9 +1,7 @@
-plugins {
+﻿plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt.android)
-    alias(libs.plugins.ksp)
 }
 
 android {
@@ -30,7 +28,7 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.15"
+        kotlinCompilerExtensionVersion = "1.5.14"
     }
 }
 
@@ -49,8 +47,7 @@ dependencies {
     implementation(libs.androidx.material.icons.extended)
 
     implementation(libs.hilt.android)
-    ksp(libs.hilt.android.compiler)
-
+    
     implementation(libs.kotlinx.coroutines.android)
 
     debugImplementation(libs.androidx.ui.tooling)

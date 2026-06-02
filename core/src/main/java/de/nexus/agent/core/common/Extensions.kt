@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.onStart
 fun <T> Flow<T>.asResult(): Flow<Result<T>> = this
     .map<T, Result<T>> { Result.Success(it) }
     .onStart { emit(Result.Loading) }
-    .catch { emit(Result.Error(it, it.message)) }
+    .catch { emit(Result.ResultError(it, it.message)) }
 
 fun Context.toast(message: String) {
     Toast.makeText(this, message, Toast.LENGTH_SHORT).show()

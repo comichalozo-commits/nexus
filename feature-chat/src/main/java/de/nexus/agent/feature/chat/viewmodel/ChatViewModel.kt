@@ -144,7 +144,7 @@ class ChatViewModel @Inject constructor(
                             _messages.update { it + errorMsg }
                             _agentState.value = AgentState.Idle
                         }
-                        is AgentState.ToolResult -> {
+                        is AgentState.ToolResultState -> {
                             // Tool results are handled in the agent loop
                         }
                         else -> { /* Other states handled by UI */ }

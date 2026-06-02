@@ -7,7 +7,7 @@ import de.nexus.agent.core.data.model.LlmProvider
 import de.nexus.agent.core.data.model.MessageRole
 import de.nexus.agent.core.data.model.ToolCall
 import de.nexus.agent.core.data.model.ToolCallStatus
-import de.nexus.agent.core.data.model.ToolDefinition
+import de.nexus.agent.core.data.model.ToolDef
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -46,7 +46,7 @@ class GeminiProvider(
 
     override suspend fun streamChat(
         messages: List<ChatMessage>,
-        tools: List<ToolDefinition>?
+        tools: List<ToolDef>?
     ): Flow<LlmStreamChunk> = flow {
         val contents = messages.filter { it.role != MessageRole.SYSTEM }
             .map { msg ->
@@ -195,7 +195,7 @@ class GeminiProvider(
 
     override suspend fun completeChat(
         messages: List<ChatMessage>,
-        tools: List<ToolDefinition>?
+        tools: List<ToolDef>?
     ) = safeCall {
         val contents = messages.filter { it.role != MessageRole.SYSTEM }
             .map { msg ->
@@ -277,7 +277,7 @@ class GeminiProvider(
 
     override fun buildRequest(
         messages: List<ChatMessage>,
-        tools: List<ToolDefinition>?
+        tools: List<ToolDef>?
     ): de.nexus.agent.core.data.model.LlmRequest {
         return de.nexus.agent.core.data.model.LlmRequest(
             model = providerConfig.model.ifBlank { "gemini-2.0-flash" },

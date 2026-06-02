@@ -16,8 +16,8 @@ class OverlayViewModel @Inject constructor() : ViewModel() {
     private val _isExpanded = MutableStateFlow(false)
     val isExpanded: StateFlow<Boolean> = _isExpanded.asStateFlow()
 
-    private val _overlayMessages = MutableStateFlow<List<OverlayMessage>>(emptyList())
-    val overlayMessages: StateFlow<List<OverlayMessage>> = _overlayMessages.asStateFlow()
+    private val _overlayMessages = MutableStateFlow<List<OverlayUiMessage>>(emptyList())
+    val overlayMessages: StateFlow<List<OverlayUiMessage>> = _overlayMessages.asStateFlow()
 
     fun onAppChanged(packageName: String) {
         _currentApp.value = packageName
@@ -27,7 +27,7 @@ class OverlayViewModel @Inject constructor() : ViewModel() {
         _isExpanded.value = !_isExpanded.value
     }
 
-    fun addMessage(message: OverlayMessage) {
+    fun addMessage(message: OverlayUiMessage) {
         _overlayMessages.value = _overlayMessages.value + message
     }
 
@@ -36,7 +36,7 @@ class OverlayViewModel @Inject constructor() : ViewModel() {
     }
 }
 
-data class OverlayMessage(
+data class OverlayUiMessage(
     val id: String = java.util.UUID.randomUUID().toString(),
     val text: String,
     val isUser: Boolean = false,

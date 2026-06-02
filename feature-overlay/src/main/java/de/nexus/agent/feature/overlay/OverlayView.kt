@@ -143,16 +143,6 @@ class OverlayView(
 }
 
 /**
- * Data class representing a chat message in the overlay.
- */
-data class OverlayMessage(
-    val id: String = java.util.UUID.randomUUID().toString(),
-    val text: String,
-    val isFromUser: Boolean,
-    val timestamp: Long = System.currentTimeMillis()
-)
-
-/**
  * Sealed class representing overlay UI state.
  */
 sealed class OverlayUiState {
@@ -246,7 +236,7 @@ fun FloatingChatHead(
 
 @Composable
 fun ExpandedChatPanel(
-    messages: List<OverlayMessage>,
+    messages: List<OverlayUiMessage>,
     inputText: String,
     isLoading: Boolean,
     onInputChange: (String) -> Unit,
@@ -426,19 +416,19 @@ fun ExpandedChatPanel(
 }
 
 @Composable
-fun MessageBubble(message: OverlayMessage) {
+fun MessageBubble(message: OverlayUiMessage) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = if (message.isFromUser) Arrangement.End else Arrangement.Start
+        horizontalArrangement = if (message.isUser) Arrangement.End else Arrangement.Start
     ) {
         Surface(
             shape = RoundedCornerShape(
                 topStart = 12.dp,
                 topEnd = 12.dp,
-                bottomStart = if (message.isFromUser) 12.dp else 4.dp,
-                bottomEnd = if (message.isFromUser) 4.dp else 12.dp
+                bottomStart = if (message.isUser) 12.dp else 4.dp,
+                bottomEnd = if (message.isUser) 4.dp else 12.dp
             ),
-            color = if (message.isFromUser)
+            color = if (message.isUser)
                 MaterialTheme.colorScheme.primary
             else
                 MaterialTheme.colorScheme.surfaceVariant,

@@ -21,7 +21,6 @@ import de.nexus.agent.core.data.model.ChatMessage
 import de.nexus.agent.core.data.model.LlmProvider
 import de.nexus.agent.core.data.model.MessageRole
 import de.nexus.agent.core.data.model.ToolCall
-import de.nexus.agent.core.data.model.ToolDefinition
 import de.nexus.agent.core.data.provider.CompositeProviderFactory
 import de.nexus.agent.core.domain.agent.AgentLoop
 import de.nexus.agent.core.domain.agent.AgentState
@@ -115,7 +114,7 @@ class AgentOrchestrator @Inject constructor(
             .build()
 
         val workRequest = PeriodicWorkRequest.Builder(
-            HeartbeatWorker::class.java,
+            HeartbeatScheduler::class.java,
             intervalMinutes,
             TimeUnit.MINUTES
         )
@@ -140,7 +139,7 @@ class AgentOrchestrator @Inject constructor(
         delayMinutes: Long = 0,
         inputData: androidx.work.Data = androidx.work.Data.EMPTY
     ) {
-        val workRequest = OneTimeWorkRequest.Builder(HeartbeatWorker::class.java)
+        val workRequest = OneTimeWorkRequest.Builder(HeartbeatScheduler::class.java)
             .setInitialDelay(delayMinutes, TimeUnit.MINUTES)
             .setInputData(inputData)
             .addTag(name)
@@ -237,7 +236,7 @@ class AgentOrchestrator @Inject constructor(
     }
 }
 
-class HeartbeatWorker(
+class HeartbeatScheduler(
     context: Context,
     params: WorkerParameters
 ) : Worker(context, params) {

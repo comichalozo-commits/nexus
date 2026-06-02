@@ -21,7 +21,7 @@ sealed class AgentEvent {
     data class ToolCompleted(val toolName: String, val result: String) : AgentEvent()
     data class TextResponse(val text: String) : AgentEvent()
     data class Error(val message: String, val toolName: String? = null) : AgentEvent()
-    object Done : AgentEvent()
+    object AgentDone : AgentEvent()
     data class TokenUsageUpdated(val usage: TokenUsage) : AgentEvent()
 }
 
@@ -156,7 +156,7 @@ class AgentLoop @Inject constructor(
                 // If no tool calls, we're done
                 if (toolCalls.isEmpty()) {
                     _state.value = AgentState.Completed
-                    emit(AgentEvent.Done)
+                    emit(AgentEvent.AgentDone)
                     return@flow
                 }
 

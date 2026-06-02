@@ -7,7 +7,7 @@ import de.nexus.agent.core.data.model.LlmProvider
 import de.nexus.agent.core.data.model.MessageRole
 import de.nexus.agent.core.data.model.ToolCall
 import de.nexus.agent.core.data.model.ToolCallStatus
-import de.nexus.agent.core.data.model.ToolDefinition
+import de.nexus.agent.core.data.model.ToolDef
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -46,7 +46,7 @@ class OpenAiProvider(
 
     override suspend fun streamChat(
         messages: List<ChatMessage>,
-        tools: List<ToolDefinition>?
+        tools: List<ToolDef>?
     ): Flow<LlmStreamChunk> = flow {
         val requestBody = buildRequestBody(messages, tools, stream = true)
         val request = Request.Builder()
@@ -125,7 +125,7 @@ class OpenAiProvider(
 
     override suspend fun completeChat(
         messages: List<ChatMessage>,
-        tools: List<ToolDefinition>?
+        tools: List<ToolDef>?
     ) = safeCall {
         val requestBody = buildRequestBody(messages, tools, stream = false)
         val request = Request.Builder()
@@ -177,7 +177,7 @@ class OpenAiProvider(
 
     override fun buildRequest(
         messages: List<ChatMessage>,
-        tools: List<ToolDefinition>?
+        tools: List<ToolDef>?
     ): de.nexus.agent.core.data.model.LlmRequest {
         return de.nexus.agent.core.data.model.LlmRequest(
             model = providerConfig.model.ifBlank { "gpt-4o-mini" },
@@ -191,7 +191,7 @@ class OpenAiProvider(
 
     private fun buildRequestBody(
         messages: List<ChatMessage>,
-        tools: List<ToolDefinition>?,
+        tools: List<ToolDef>?,
         stream: Boolean
     ): String {
         val jsonMessages = buildJsonArray {

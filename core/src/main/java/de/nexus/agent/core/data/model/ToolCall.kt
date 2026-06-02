@@ -20,7 +20,7 @@ enum class ToolCallStatus {
 }
 
 @Serializable
-data class ToolDefinition(
+data class ToolDef(
     val name: String,
     val description: String,
     val parameters: ToolParameterSchema
@@ -51,7 +51,7 @@ data class ToolResult(
 data class LlmRequest(
     val model: String,
     val messages: List<ChatMessage>,
-    val tools: List<ToolDefinition>? = null,
+    val tools: List<ToolDef>? = null,
     val temperature: Float = 0.7f,
     val maxTokens: Int = 4096,
     val stream: Boolean = true

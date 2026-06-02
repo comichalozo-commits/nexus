@@ -1,6 +1,6 @@
 package de.nexus.agent.core.domain.agent
 
-import de.nexus.agent.core.data.model.ToolDefinition
+import de.nexus.agent.core.data.model.ToolDef
 import de.nexus.agent.core.domain.tools.Tool
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -21,9 +21,9 @@ class ToolRegistry @Inject constructor() {
 
     fun getAllTools(): List<Tool> = tools.values.toList()
 
-    fun getToolDefinitions(): List<ToolDefinition> {
+    fun getToolDefinitions(): List<ToolDef> {
         return tools.values.map { tool ->
-            ToolDefinition(
+            ToolDef(
                 name = tool.name,
                 description = tool.description,
                 parameters = tool.parameters

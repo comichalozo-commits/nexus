@@ -9,7 +9,7 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
-import de.nexus.agent.engine.HeartbeatWorker
+import de.nexus.agent.engine.HeartbeatScheduler
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
@@ -52,7 +52,7 @@ class NexusApplication : Application() {
             .setRequiresBatteryNotLow(true)
             .build()
 
-        val heartbeatRequest = PeriodicWorkRequestBuilder<HeartbeatWorker>(
+        val heartbeatRequest = PeriodicWorkRequestBuilder<HeartbeatScheduler>(
             repeatInterval = 30,
             TimeUnit.MINUTES,
             flexTimeInterval = 5,

@@ -6,7 +6,7 @@ import de.nexus.agent.core.data.model.LlmStreamChunk
 import de.nexus.agent.core.data.model.LlmProvider
 import de.nexus.agent.core.data.model.MessageRole
 import de.nexus.agent.core.data.model.ToolCall
-import de.nexus.agent.core.data.model.ToolDefinition
+import de.nexus.agent.core.data.model.ToolDef
 import de.nexus.agent.core.data.model.ToolCallStatus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -46,7 +46,7 @@ class AnthropicProvider(
 
     override suspend fun streamChat(
         messages: List<ChatMessage>,
-        tools: List<ToolDefinition>?
+        tools: List<ToolDef>?
     ): Flow<LlmStreamChunk> = flow {
         val (systemMessages, conversationMessages) = messages.partition { it.role == MessageRole.SYSTEM }
         val systemContent = systemMessages.joinToString("\n") { it.content }
@@ -138,7 +138,7 @@ class AnthropicProvider(
 
     override suspend fun completeChat(
         messages: List<ChatMessage>,
-        tools: List<ToolDefinition>?
+        tools: List<ToolDef>?
     ) = safeCall {
         val (systemMessages, conversationMessages) = messages.partition { it.role == MessageRole.SYSTEM }
         val systemContent = systemMessages.joinToString("\n") { it.content }
@@ -195,7 +195,7 @@ class AnthropicProvider(
 
     override fun buildRequest(
         messages: List<ChatMessage>,
-        tools: List<ToolDefinition>?
+        tools: List<ToolDef>?
     ): de.nexus.agent.core.data.model.LlmRequest {
         return de.nexus.agent.core.data.model.LlmRequest(
             model = providerConfig.model.ifBlank { "claude-3-5-haiku-20241022" },
@@ -210,7 +210,7 @@ class AnthropicProvider(
     private fun buildRequestBody(
         messages: List<ChatMessage>,
         systemContent: String?,
-        tools: List<ToolDefinition>?,
+        tools: List<ToolDef>?,
         stream: Boolean
     ): String {
         val jsonMessages = buildJsonArray {

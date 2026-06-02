@@ -129,7 +129,7 @@
     <string name="task_status_failed">Fehlgeschlagen</string>
 
     <!-- About -->
-    name="about_description">Nexus Agent – Dein persönlicher KI-Assistent auf Android</string>
+    <string name="about_description">Nexus Agent – Dein persönlicher KI-Assistent auf Android</string>
     <string name="about_source_code">Quellcode</string>
     <string name="about_privacy">Datenschutz</string>
     <string name="about_third_party">Open Source Lizenzen</string>

@@ -1,0 +1,13 @@
+fix: resolve 10 duplicate class compilation errors
+
+- Rename Result.Error to ResultError (conflict with LlmModels.Error)
+- Rename AgentEvent.Done to AgentDone (conflict with ChatStreamEvent.Done)
+- Rename ToolDefinition to ToolDef in ToolCall.kt
+- Rename AgentState.ToolResult to ToolResultState
+- Remove duplicate EmbeddingService from MemorySystem.kt
+- Remove duplicate ScheduleTool from MemoryTool.kt
+- Remove duplicate WebFetchTool from WebSearchTool.kt
+- Rename HeartbeatWorker to HeartbeatScheduler in AgentOrchestrator.kt
+- Remove duplicate BootCompletedReceiver from Services.kt
+- Rename OverlayMessage to OverlayUiMessage in OverlayViewModel.kt
+- Update all references, imports and type annotations across 40+ files

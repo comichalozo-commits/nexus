@@ -1,15 +1,15 @@
 [versions]
 agp = "8.6.1"
-kotlin = "2.0.21"
+kotlin = "1.9.22"
 coreKtx = "1.15.0"
 lifecycleRuntimeKtx = "2.8.5"
 activityCompose = "1.9.2"
-composeBom = "2024.10.01"
+composeBom = "2023.10.01"
 navigationCompose = "2.8.0"
-hilt = "2.52"
+hilt = "2.48"
 hiltNavigationCompose = "1.2.0"
-room = "2.7.0"
-ksp = "2.0.21-1.0.25"
+room = "2.6.1"
+ksp = "1.9.22-1.0.17"
 retrofit = "2.11.0"
 okhttp = "4.12.0"
 kotlinxSerializationJson = "1.7.3"
@@ -87,7 +87,6 @@ turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
-kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

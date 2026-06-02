@@ -82,38 +82,3 @@ class MemorySystem @Inject constructor(
     }
 }
 
-@Singleton
-class EmbeddingService @Inject constructor() {
-    fun generateEmbedding(text: String): FloatArray {
-        // Placeholder: In a real app, this would call an on-device ML model
-        // or an API to generate embeddings. For now, return a hash-based vector.
-        val vectorSize = 128
-        val embedding = FloatArray(vectorSize)
-        for (i in text.indices) {
-            val idx = i % vectorSize
-            embedding[idx] = (text.codePointAt(i) % 100) / 100f
-        }
-        // Normalize
-        val magnitude = kotlin.math.sqrt(embedding.sumOf { it * it.toDouble() }).toFloat()
-        if (magnitude > 0f) {
-            for (i in embedding.indices) {
-                embedding[i] /= magnitude
-            }
-        }
-        return embedding
-    }
-
-    fun cosineSimilarity(a: FloatArray, b: FloatArray): Float {
-        require(a.size == b.size) { "Vectors must have same dimension" }
-        var dot = 0f
-        var magA = 0f
-        var magB = 0f
-        for (i in a.indices) {
-            dot += a[i] * b[i]
-            magA += a[i] * a[i]
-            magB += b[i] * b[i]
-        }
-        val denom = kotlin.math.sqrt(magA.toDouble()).toFloat() * kotlin.math.sqrt(magB.toDouble()).toFloat()
-        return if (denom > 0f) dot / denom else 0f
-    }
-}
