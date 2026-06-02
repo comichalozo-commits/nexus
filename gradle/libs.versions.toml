@@ -28,6 +28,7 @@ junit = "5.11.0"
 junitVersion = "1.2.1"
 espressoCore = "3.6.1"
 mockk = "1.13.12"
+timber = "5.0.1"
 turbine = "1.1.0"
 
 [libraries]
@@ -79,6 +80,7 @@ androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-co
 androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
+timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
 turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
 
 [plugins]

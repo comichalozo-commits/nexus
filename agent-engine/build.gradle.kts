@@ -41,6 +41,7 @@ dependencies {
 
     testImplementation(libs.junit.jupiter.api)
     testImplementation(libs.mockk)
+    implementation(libs.timber)
     testImplementation(libs.turbine)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

@@ -1,22 +1,20 @@
 package de.nexus.agent.navigation
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.navArgument
-import de.nexus.agent.feature.chat.ui.ChatScreen
-import de.nexus.agent.feature.settings.ui.LlmProviderSettingsScreen
-import de.nexus.agent.feature.settings.ui.SettingsScreen
 
 sealed class Screen(val route: String) {
     object Chat : Screen("chat")
-    object Settings : Screen("settings")
-    object ProviderConfig : Screen("provider_config/{providerId}") {
-        fun createRoute(providerId: String) = "provider_config/$providerId"
-    }
 }
 
 @Composable
@@ -30,37 +28,19 @@ fun NexusNavHost(
         modifier = modifier
     ) {
         composable(Screen.Chat.route) {
-            ChatScreen(
-                onNavigateToSettings = {
-                    navController.navigate(Screen.Settings.route)
+            Scaffold { padding ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        "Nexus Agent",
+                        style = MaterialTheme.typography.headlineLarge
+                    )
                 }
-            )
-        }
-
-        composable(Screen.Settings.route) {
-            SettingsScreen(
-                onNavigateToProviderConfig = { providerId ->
-                    navController.navigate(Screen.ProviderConfig.createRoute(providerId))
-                },
-                onNavigateBack = {
-                    navController.popBackStack()
-                }
-            )
-        }
-
-        composable(
-            route = Screen.ProviderConfig.route,
-            arguments = listOf(
-                navArgument("providerId") { type = NavType.StringType }
-            )
-        ) { backStackEntry ->
-            val providerId = backStackEntry.arguments?.getString("providerId") ?: ""
-            LlmProviderSettingsScreen(
-                providerId = providerId,
-                onNavigateBack = {
-                    navController.popBackStack()
-                }
-            )
+            }
         }
     }
 }

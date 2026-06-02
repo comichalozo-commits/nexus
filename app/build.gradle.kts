@@ -57,10 +57,10 @@ android {
 
 dependencies {
     implementation(project(":core"))
-    implementation(project(":feature-chat"))
-    implementation(project(":feature-settings"))
-    implementation(project(":feature-overlay"))
-    implementation(project(":agent-engine"))
+    //implementation(project(":feature-chat"))
+    //implementation(project(":feature-settings"))
+    //implementation(project(":feature-overlay"))
+    //implementation(project(":agent-engine"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
