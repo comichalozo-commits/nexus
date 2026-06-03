@@ -1,4 +1,4 @@
-﻿package de.nexus.agent.feature.chat.ui
+package de.nexus.agent.feature.chat.ui
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
@@ -9,20 +9,28 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
@@ -31,6 +39,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
@@ -44,29 +53,32 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import de.nexus.agent.feature.chat.model.MessageRole
-import de.nexus.agent.feature.chat.model.UiState
+import de.nexus.agent.core.data.model.MessageRole
 import de.nexus.agent.feature.chat.viewmodel.ChatViewModel
+import de.nexus.agent.core.domain.agent.AgentState
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(
     onNavigateToSettings: () -> Unit,
-    viewModel: ChatViewModel = remember { ChatViewModel() }
+    viewModel: ChatViewModel
 ) {
     val messages by viewModel.messages.collectAsState()
-    val uiState by viewModel.uiState.collectAsState()
+    val agentState by viewModel.agentState.collectAsState()
     val providerStatus by viewModel.providerStatus.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
-    val isProcessing = uiState == UiState.PROCESSING || uiState == UiState.STREAMING
+    val isProcessing = agentState is AgentState.Thinking || agentState is AgentState.Streaming
 
     val snackbarHostState = remember { SnackbarHostState() }
     val listState = rememberLazyListState()
@@ -104,7 +116,6 @@ fun ChatScreen(
                         duration = SnackbarDuration.Short
                     )
                 }
-                else -> { }
             }
         }
     }
@@ -119,11 +130,13 @@ fun ChatScreen(
         }
     }
 
+    val isConnected = providerStatus.values.any { it }
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             ChatTopBar(
-                providerStatus = providerStatus,
+                isConnected = isConnected,
                 onSettingsClick = onNavigateToSettings,
                 isProcessing = isProcessing
             )
@@ -165,8 +178,7 @@ fun ChatScreen(
         ) {
             if (messages.isEmpty()) {
                 EmptyState(
-                    onPromptClick = { prompt -> viewModel.sendMessage(prompt) },
-                    providerStatus = providerStatus
+                    onPromptClick = { prompt -> viewModel.sendMessage(prompt) }
                 )
             } else {
                 LazyColumn(
@@ -195,7 +207,7 @@ fun ChatScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ChatTopBar(
-    providerStatus: de.nexus.agent.feature.chat.model.ProviderStatus,
+    isConnected: Boolean,
     onSettingsClick: () -> Unit,
     isProcessing: Boolean
 ) {
@@ -217,7 +229,7 @@ private fun ChatTopBar(
         actions = {
             Surface(
                 shape = MaterialTheme.shapes.small,
-                color = if (providerStatus.isConnected)
+                color = if (isConnected)
                     MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f)
                 else
                     MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f),
@@ -230,16 +242,16 @@ private fun ChatTopBar(
                     Surface(
                         modifier = Modifier.size(8.dp),
                         shape = MaterialTheme.shapes.extraSmall,
-                        color = if (providerStatus.isConnected)
+                        color = if (isConnected)
                             MaterialTheme.colorScheme.primary
                         else
                             MaterialTheme.colorScheme.error
                     ) { }
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = if (providerStatus.isConnected) "Online" else "Offline",
+                        text = if (isConnected) "Online" else "Offline",
                         style = MaterialTheme.typography.labelSmall,
-                        color = if (providerStatus.isConnected)
+                        color = if (isConnected)
                             MaterialTheme.colorScheme.onSecondaryContainer
                         else
                             MaterialTheme.colorScheme.onErrorContainer
@@ -287,6 +299,152 @@ private fun ProcessingIndicator() {
                 strokeWidth = 2.dp,
                 color = MaterialTheme.colorScheme.primary
             )
+        }
+    }
+}
+
+@Composable
+fun MessageBubble(
+    message: de.nexus.agent.core.data.model.ChatMessage,
+    isUser: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val backgroundColor = if (isUser) {
+        MaterialTheme.colorScheme.primaryContainer
+    } else {
+        MaterialTheme.colorScheme.surfaceVariant
+    }
+    val alignment = if (isUser) Alignment.CenterEnd else Alignment.CenterStart
+
+    Box(
+        modifier = modifier,
+        contentAlignment = alignment
+    ) {
+        Surface(
+            shape = RoundedCornerShape(
+                topStart = 16.dp,
+                topEnd = 16.dp,
+                bottomStart = if (isUser) 16.dp else 4.dp,
+                bottomEnd = if (isUser) 4.dp else 16.dp
+            ),
+            color = backgroundColor,
+            modifier = Modifier.widthIn(max = 300.dp)
+        ) {
+            Text(
+                text = message.content,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+    }
+}
+
+@Composable
+fun InputBar(
+    onSend: (String) -> Unit,
+    isProcessing: Boolean,
+    modifier: Modifier = Modifier
+) {
+    var text by remember { mutableStateOf("") }
+
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        tonalElevation = 3.dp,
+        shadowElevation = 8.dp
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            OutlinedTextField(
+                value = text,
+                onValueChange = { text = it },
+                modifier = Modifier.weight(1f),
+                placeholder = { Text("Nachricht eingeben...") },
+                enabled = !isProcessing,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                keyboardActions = KeyboardActions(
+                    onSend = {
+                        if (text.isNotBlank()) {
+                            onSend(text.trim())
+                            text = ""
+                        }
+                    }
+                ),
+                shape = RoundedCornerShape(24.dp),
+                singleLine = false,
+                maxLines = 4
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            IconButton(
+                onClick = {
+                    if (text.isNotBlank()) {
+                        onSend(text.trim())
+                        text = ""
+                    }
+                },
+                enabled = !isProcessing && text.isNotBlank()
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.Send,
+                    contentDescription = "Senden",
+                    tint = if (text.isNotBlank() && !isProcessing)
+                        MaterialTheme.colorScheme.primary
+                    else
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun EmptyState(
+    onPromptClick: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val prompts = listOf(
+        "Was kannst du tun?",
+        "Erkläre mir Kotlin Coroutines",
+        "Hilfe bei Android Entwicklung"
+    )
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "Nexus Agent",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "Wie kann ich dir helfen?",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(modifier = Modifier.height(24.dp))
+        prompts.forEach { prompt ->
+            Surface(
+                onClick = { onPromptClick(prompt) },
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp)
+            ) {
+                Text(
+                    text = prompt,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
         }
     }
 }

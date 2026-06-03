@@ -24,7 +24,7 @@ rootProject.name = "NexusAgent"
 
 include(":app")
 include(":core")
-//include(":feature-chat")
-//include(":feature-settings")
-//include(":feature-overlay")
-//include(":agent-engine")
+include(":feature-chat")
+include(":feature-settings")
+include(":feature-overlay")
+include(":agent-engine")

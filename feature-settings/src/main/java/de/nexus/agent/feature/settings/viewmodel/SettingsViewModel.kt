@@ -42,8 +42,7 @@ private val Application.dataStore by preferencesDataStore(name = "nexus_settings
 
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val context = application.applicationContext
-    private val dataStore = context.dataStore
+    private val dataStore = application.dataStore
     private val db = ServiceLocator.db
     private val llmRouter = ServiceLocator.providers
 

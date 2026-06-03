@@ -59,6 +59,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.platform.AbstractComposeView
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -100,7 +101,7 @@ class OverlayView(
                 @Suppress("DEPRECATION")
                 WindowManager.LayoutParams.TYPE_PHONE
             },
-            WindowManager.LayoutParams.FLAG_NOT_FOCUS_CONTENT_INAPP or
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                     WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
             PixelFormat.TRANSLUCENT
         ).apply {
@@ -109,8 +110,9 @@ class OverlayView(
             y = 100
         }
 
-        val composeView = ComposeView(context).apply {
-            setContent {
+        val composeView = object : AbstractComposeView(context) {
+            @Composable
+            override fun Content() {
                 MaterialTheme {
                     FloatingChatOverlay(
                         viewModel = viewModel,
@@ -438,7 +440,7 @@ fun MessageBubble(message: OverlayUiMessage) {
                 text = message.text,
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                 style = MaterialTheme.typography.bodyMedium,
-                color = if (message.isFromUser)
+                color = if (message.isUser)
                     Color.White
                 else
                     MaterialTheme.colorScheme.onSurfaceVariant

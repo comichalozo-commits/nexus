@@ -11,7 +11,6 @@ import androidx.work.WorkerParameters
 import kotlinx.coroutines.flow.first
 import timber.log.Timber
 import java.util.Calendar
-import java.util.concurrent.TimeUnit
 
 class HeartbeatWorker(
     context: Context,
@@ -22,11 +21,6 @@ class HeartbeatWorker(
         Timber.i("Heartbeat check started")
 
         try {
-            val entryPoint = EntryPointAccessors.fromApplication(
-                applicationContext,
-                HeartbeatEntryPoint::class.java
-            )
-
             val notificationCheck = checkNotifications()
             val calendarCheck = checkCalendar()
             val locationCheck = checkLocation()
@@ -168,8 +162,4 @@ class HeartbeatWorker(
     )
 }
 
-@EntryPoint
-(SingletonComponent::class)
-interface HeartbeatEntryPoint {
-    fun heartbeatWorker(): HeartbeatWorker
-}
+

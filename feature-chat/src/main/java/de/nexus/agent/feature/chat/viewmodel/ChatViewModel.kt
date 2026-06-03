@@ -11,8 +11,11 @@ import de.nexus.agent.core.data.model.MessageRole
 import de.nexus.agent.core.domain.agent.AgentLoop
 import de.nexus.agent.core.domain.agent.AgentState
 import de.nexus.agent.core.data.provider.LlmRouter
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -49,6 +52,14 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
+
+    sealed class ChatEvent {
+        data class ShowSnackbar(val message: String) : ChatEvent()
+        object ConversationCleared : ChatEvent()
+    }
+
+    private val _events = MutableSharedFlow<ChatEvent>()
+    val events: SharedFlow<ChatEvent> = _events.asSharedFlow()
 
     private val currentConversationId = "default"
     private var generationJob: kotlinx.coroutines.Job? = null
@@ -129,12 +140,12 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 _agentState.value = AgentState.Error(e.message ?: "Unbekannter Fehler")
                 _streamingText.value = ""
 
-                val errorMessage = ChatMessage(
+                val errorMsg = ChatMessage(
                     role = MessageRole.ASSISTANT,
                     content = "Fehler: ${e.message}"
                 )
-                messageDao.insertMessage(errorMessage.toEntity(currentConversationId))
-                _messages.update { it + errorMessage }
+                messageDao.insertMessage(errorMsg.toEntity(currentConversationId))
+                _messages.update { it + errorMsg }
             }
         }
     }

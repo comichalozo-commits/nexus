@@ -44,14 +44,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.nexus.agent.core.common.Constants
 import de.nexus.agent.feature.settings.viewmodel.SettingsViewModel
-import de.nexus.agent.ui.theme.NexusAgentTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     onNavigateToProviderConfig: (String) -> Unit,
     onNavigateBack: () -> Unit,
-    viewModel: SettingsViewModel = remember { SettingsViewModel() }
+    viewModel: SettingsViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 ) {
     val settingsState by viewModel.settingsState.collectAsState()
 
@@ -261,7 +260,7 @@ fun SettingsSwitchItem(
 @Preview(showBackground = true)
 @Composable
 fun SettingsScreenPreview() {
-    NexusAgentTheme {
+    MaterialTheme {
         SettingsScreen(
             onNavigateToProviderConfig = {},
             onNavigateBack = {}

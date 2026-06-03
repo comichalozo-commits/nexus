@@ -18,9 +18,10 @@ import de.nexus.agent.core.data.db.ConversationDao
 import de.nexus.agent.core.data.db.ToolDao
 import de.nexus.agent.core.data.model.ChatMessage
 import de.nexus.agent.core.data.model.LlmProvider
+import de.nexus.agent.core.data.model.isConfigured
 import de.nexus.agent.core.data.model.MessageRole
 import de.nexus.agent.core.data.model.ToolCall
-import de.nexus.agent.core.data.provider.CompositeProviderFactory
+import de.nexus.agent.core.data.provider.LlmRouter
 import de.nexus.agent.core.domain.agent.AgentLoop
 import de.nexus.agent.core.domain.agent.AgentState
 import de.nexus.agent.core.domain.agent.ToolRegistry
@@ -35,7 +36,7 @@ class AgentOrchestrator  constructor(
     private val toolDao: ToolDao,
     private val conversationDao: ConversationDao,
     private val scheduledJobDao: ScheduledJobDao,
-    private val providerFactory: CompositeProviderFactory,
+    private val llmRouter: LlmRouter,
     private val toolRegistry: ToolRegistry,
     private val memorySystem: MemorySystem
 ) {
@@ -191,11 +192,9 @@ class AgentOrchestrator  constructor(
                 return Result.failure(Exception("Provider nicht konfiguriert"))
             }
 
-            val llmProvider = providerFactory.create(provider)
             val agentLoop = AgentLoop(
-                provider = llmProvider,
-                toolRegistry = toolRegistry,
-                maxIterations = 10
+                provider = llmRouter,
+                toolRegistry = toolRegistry
             )
 
             val responseBuilder = StringBuilder()

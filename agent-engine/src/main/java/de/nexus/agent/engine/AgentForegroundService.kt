@@ -49,6 +49,11 @@ class AgentForegroundService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+        wakeLock = powerManager.newWakeLock(
+            PowerManager.PARTIAL_WAKE_LOCK,
+            "NexusAgent::AgentForegroundService"
+        )
         createNotificationChannel()
         Timber.i("AgentForegroundService created")
     }
@@ -160,7 +165,7 @@ class AgentForegroundService : Service() {
 
     private fun stopAgentTask() {
         currentTaskJob?.cancel()
-        currentJob = null
+        currentTaskJob = null
 
         if (wakeLock.isHeld) {
             try {

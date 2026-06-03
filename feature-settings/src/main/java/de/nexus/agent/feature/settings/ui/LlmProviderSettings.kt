@@ -25,7 +25,7 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuAnchorType
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
@@ -50,8 +50,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.nexus.agent.core.data.model.LlmProvider
+import de.nexus.agent.core.data.model.listedModelSelection
 import de.nexus.agent.feature.settings.viewmodel.SettingsViewModel
-import de.nexus.agent.ui.theme.NexusAgentTheme
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -66,9 +66,11 @@ fun LlmProviderSettingsScreen(
     val testResult by viewModel.testConnectionResult.collectAsState()
     var showApiKey by remember { mutableStateOf(false) }
 
-    LaunchedEffect(testResult?.message) {
-        testResult?.let {
-            snackbarHostState.showSnackbar(it)
+    LaunchedEffect(testResult) {
+        testResult?.let { result ->
+            result.message.let { msg ->
+                snackbarHostState.showSnackbar(msg)
+            }
             viewModel.clearTestResult()
         }
     }
@@ -154,7 +156,7 @@ fun LlmProviderSettingsScreen(
                 )
                 Slider(
                     value = provider.temperature,
-                    onValueChange = { viewModel.updateProviderTemperatureProviderId, it) },
+                    onValueChange = { viewModel.updateProviderTemperature(providerId, it) },
                     valueRange = 0f..2f,
                     steps = 19
                 )
@@ -250,7 +252,7 @@ fun ModelDropdown(
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier
                 .fillMaxWidth()
-                .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                .menuAnchor()
         )
 
         ExposedDropdownMenu(
@@ -259,7 +261,7 @@ fun ModelDropdown(
         ) {
             models.forEach { model ->
                 DropdownMenuItem(
-                    text = { Text(model, maxLines = 1) },
+                    text = { Text(text = model, maxLines = 1) },
                     onClick = {
                         onModelSelected(model)
                         expanded = false
@@ -273,7 +275,7 @@ fun ModelDropdown(
 @Preview(showBackground = true)
 @Composable
 fun LlmProviderSettingsPreview() {
-    NexusAgentTheme {
+    MaterialTheme {
         LlmProviderSettingsScreen(
             providerId = "openrouter",
             onNavigateBack = {}
