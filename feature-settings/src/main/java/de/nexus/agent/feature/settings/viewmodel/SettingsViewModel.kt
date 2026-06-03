@@ -13,7 +13,6 @@ import de.nexus.agent.core.data.db.MemoryFactDao
 import de.nexus.agent.core.data.db.ScheduledJobDao
 import de.nexus.agent.core.data.db.SkillDao
 import de.nexus.agent.core.data.model.LlmProvider
-import de.nexus.agent.core.data.provider.LlmRouter
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -170,16 +169,27 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    private fun updateProviderField(providerId: String, update: LlmProvider.() -> LlmProvider) {
+        viewModelScope.launch {
+            _providers.value = _providers.value.toMutableMap().also { map ->
+                map[providerId] = map[providerId]?.update() ?: LlmProvider(id = providerId, name = providerId, baseUrl = "")
+            }
+        }
+    }
+
     fun updateProviderApiKey(providerId: String, key: String) {
         updateProviderString(providerId, "api_key", key)
+        updateProviderField(providerId) { copy(apiKey = key) }
     }
 
     fun updateProviderBaseUrl(providerId: String, url: String) {
         updateProviderString(providerId, "base_url", url)
+        updateProviderField(providerId) { copy(baseUrl = url) }
     }
 
     fun updateProviderModel(providerId: String, model: String) {
         updateProviderString(providerId, "model", model)
+        updateProviderField(providerId) { copy(model = model) }
     }
 
     fun updateProviderTemperature(providerId: String, temp: Float) {
@@ -188,6 +198,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 prefs[stringPreferencesKey("${providerId}_temperature")] = temp.toString()
             }
         }
+        updateProviderField(providerId) { copy(temperature = temp) }
     }
 
     fun updateProviderMaxTokens(providerId: String, tokens: Int) {
@@ -196,6 +207,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 prefs[intPreferencesKey("${providerId}_max_tokens")] = tokens
             }
         }
+        updateProviderField(providerId) { copy(maxTokens = tokens) }
     }
 
     private fun updateProviderString(providerId: String, field: String, value: String) {

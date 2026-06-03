@@ -164,7 +164,6 @@ fun FloatingChatOverlay(
     val isLoading by viewModel.isLoading.collectAsState()
 
     when (uiState) {
-        is OverlayUiState.Hidden -> { /* Don't render */ }
         is OverlayUiState.Minimized -> {
             FloatingChatHead(
                 messageCount = messages.size,
@@ -182,6 +181,7 @@ fun FloatingChatOverlay(
                 onMinimize = { viewModel.minimize() }
             )
         }
+        else -> { /* Hidden or unknown state, don't render */ }
     }
 }
 

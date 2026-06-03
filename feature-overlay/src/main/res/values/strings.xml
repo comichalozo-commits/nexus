@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="accessibility_service_description">
+        Nexus Agent Overlay ermöglicht es, über einen schwebenden Chat-Button mit dem KI-Agenten zu interagieren,
+        unabhängig davon, welche App gerade geöffnet ist.
+    </string>
+</resources>

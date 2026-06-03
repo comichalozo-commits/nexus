@@ -67,6 +67,7 @@ import de.nexus.agent.core.data.model.MessageRole
 import de.nexus.agent.feature.chat.viewmodel.ChatViewModel
 import de.nexus.agent.core.domain.agent.AgentState
 import kotlinx.coroutines.launch
+import androidx.compose.material3.HorizontalDivider
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -188,6 +189,22 @@ fun ChatScreen(
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    // Streaming indicator at the bottom (visually top in reverse layout)
+                    if (agentState is AgentState.Streaming) {
+                        item(key = "__streaming__") {
+                            StreamingBubble(
+                                text = (agentState as AgentState.Streaming).partialText,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    } else if (agentState is AgentState.Thinking) {
+                        item(key = "__thinking__") {
+                            ThinkingIndicator(
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+
                     items(
                         items = messages.reversed(),
                         key = { it.id }
@@ -394,6 +411,75 @@ fun InputBar(
                         MaterialTheme.colorScheme.primary
                     else
                         MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun StreamingBubble(
+    text: String,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.CenterStart
+    ) {
+        Surface(
+            shape = RoundedCornerShape(
+                topStart = 16.dp,
+                topEnd = 16.dp,
+                bottomStart = 4.dp,
+                bottomEnd = 16.dp
+            ),
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            modifier = Modifier.widthIn(max = 300.dp)
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = text,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.weight(1f, fill = false)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                ProcessingIndicator()
+            }
+        }
+    }
+}
+
+@Composable
+private fun ThinkingIndicator(
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.CenterStart
+    ) {
+        Surface(
+            shape = RoundedCornerShape(
+                topStart = 16.dp,
+                topEnd = 16.dp,
+                bottomStart = 4.dp,
+                bottomEnd = 16.dp
+            ),
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            modifier = Modifier.widthIn(max = 300.dp)
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                ProcessingIndicator()
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Denkt nach...",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }

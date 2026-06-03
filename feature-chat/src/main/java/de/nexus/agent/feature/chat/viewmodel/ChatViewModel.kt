@@ -100,7 +100,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                     .map { it.toChatMessage() }
 
                 val messagesForAgent = recentMessages.filter {
-                    it.role == MessageRole.USER || it.role == MessageRole.ASSISTANT
+                    it.role == MessageRole.USER || it.role == MessageRole.ASSISTANT || it.role == MessageRole.SYSTEM
                 }
 
                 val agentLoop = AgentLoop(
@@ -165,6 +165,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         _errorMessage.value = null
     }
 
+    @Suppress("UNUSED_PARAMETER")
     fun onScrollPositionChanged(isAtBottom: Boolean) {
         // Track scroll position for auto-scroll behavior
     }
@@ -174,7 +175,9 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             id = this.id,
             role = try { MessageRole.valueOf(this.role) } catch (_: Exception) { MessageRole.USER },
             content = this.content,
-            timestamp = this.timestamp
+            toolCallId = this.toolCallId,
+            timestamp = this.timestamp,
+            conversationId = this.conversationId
         )
     }
 
@@ -183,8 +186,9 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             id = this.id,
             role = this.role.name,
             content = this.content,
+            toolCallId = this.toolCallId,
             timestamp = this.timestamp,
-            conversationId = conversationId
+            conversationId = this.conversationId.ifBlank { conversationId }
         )
     }
 }
